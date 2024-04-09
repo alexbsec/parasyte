@@ -21,6 +21,7 @@
 // Include declarations
 #include <vector>
 #include <string>
+#include <iostream>
 
 /* CODE START */
 
@@ -29,6 +30,7 @@ namespace network {
   // struct for storing host information
   struct NetworkHost {
   std::string ip_address;
+  std::string mac_address;
   int port;
   std::string service_name;
   bool is_vulnerable;
@@ -55,6 +57,8 @@ namespace network {
       
     // Private methods
     void ScanIPAddress(const std::string& ip_address);
+    bool GetName(std::string name, std::string dest);
+    bool GetMacAddress(std::string mac, std::string dest);
 
     // Utility methods
     bool IsPortOpen(const std::string& ip_address, int port);
