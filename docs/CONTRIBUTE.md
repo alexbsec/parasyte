@@ -8,7 +8,8 @@ Before you begin writing code, please consider the following guidelines to ensur
 
 ### Coding Standards
 
-- Google C++ Style Guide: All code must adhere to the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). This includes conventions on formatting, naming, usage, and more.
+- Google C++ Style Guide: All code must adhere to the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html). This includes conventions on formatting, naming, usage, and more. 
+- The filenames must capitalize every new word, different from Google: NetScanner (Net and Scanner are capitalized).
 - Exception handling: Avoid using throw statements for exception handling in nested functions. Instead, prefer return codes or error objects for error handling in lower-level functions, and reserve exceptions for unexpected errors that the immediate function cannot handle.
 
 ### Pull Requests
