@@ -55,6 +55,20 @@ namespace utils {
 
   // Structs
 
+  struct RouteInfoIPv4 {
+    std::string name;
+    boost::asio::ip::address_v4 dest;
+    boost::asio::ip::address_v4 gateway;
+    boost::asio::ip::address_v4 netmask;
+    int ref_count;
+    int use;
+    int metric;
+    uint32_t flags;
+    uint32_t mtu;
+    uint32_t window;
+    unsigned ip_route_table;
+  };
+
   struct RouteInfoIPv6 {
     boost::asio::ip::address_v6 dest;
     uint16_t dest_prefix;
@@ -70,59 +84,59 @@ namespace utils {
 
   // Utility classes
   class RawProtocol {
-  public:
-    // Type definitions
-    using basic_endpoint = boost::asio::ip::basic_endpoint<RawProtocol>;
-    using basic_raw_socket = boost::asio::basic_raw_socket<RawProtocol>;
-    using basic_resolver = boost::asio::ip::basic_resolver<RawProtocol>;
+    public:
+      // Type definitions
+      using basic_endpoint = boost::asio::ip::basic_endpoint<RawProtocol>;
+      using basic_raw_socket = boost::asio::basic_raw_socket<RawProtocol>;
+      using basic_resolver = boost::asio::ip::basic_resolver<RawProtocol>;
 
-    // Constructors
-    static RawProtocol IPv4() {
-      return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET));
-    }
+      // Constructors
+      static RawProtocol IPv4() {
+        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET));
+      }
 
-    static RawProtocol IPv6() {
-      return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET6));
-    }
+      static RawProtocol IPv6() {
+        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET6));
+      }
 
-    // Accessors and mutators
-    int ProtocolType() const {
-      // Used to determine the protocol type
-      return BOOST_ASIO_OS_DEF(SOCK_RAW);
-    }
+      // Accessors and mutators
+      int ProtocolType() const {
+        // Used to determine the protocol type
+        return BOOST_ASIO_OS_DEF(SOCK_RAW);
+      }
 
-    int ProtocolFamily() const {
-      // Used to determine the protocol family
-      return family_;
-    }
+      int ProtocolFamily() const {
+        // Used to determine the protocol family
+        return family_;
+      }
 
-    int Protocol() const {
-      // Used to determine the protocol
-      return protocol_;
-    }
+      int Protocol() const {
+        // Used to determine the protocol
+        return protocol_;
+      }
 
-    // Mutator for the protocol
-    void Protocol(int protocol) {
-      protocol_ = protocol;
-    }
+      // Mutator for the protocol
+      void Protocol(int protocol) {
+        protocol_ = protocol;
+      }
 
-    // Comparison operators
-    friend bool operator==(const RawProtocol &p1, const RawProtocol &p2) {
-      // We use friend here to allow access to private members
-      // Used to compare two RawProtocol objects
-      return p1.family_ != p2.family_;
-    }
+      // Comparison operators
+      friend bool operator==(const RawProtocol &p1, const RawProtocol &p2) {
+        // We use friend here to allow access to private members
+        // Used to compare two RawProtocol objects
+        return p1.family_ != p2.family_;
+      }
 
-    friend bool operator!=(const RawProtocol &p1, const RawProtocol &p2) {
-      // We use friend here to allow access to private members
-      // Used to compare two RawProtocol objects
-      return p1.family_ != p2.family_;
-    }
+      friend bool operator!=(const RawProtocol &p1, const RawProtocol &p2) {
+        // We use friend here to allow access to private members
+        // Used to compare two RawProtocol objects
+        return p1.family_ != p2.family_;
+      }
 
-  private:
-    explicit RawProtocol(int protocol) : family_(protocol) {}
-    int family_;
-    int protocol_;
+    private:
+      explicit RawProtocol(int protocol) : family_(protocol) {}
+      int family_;
+      int protocol_;
 
   };
 
@@ -355,17 +369,17 @@ namespace utils {
   };
 
   class RouteTableIPv6 {
-  public:
-    RouteTableIPv6();
-    std::vector<RouteInfoIPv6>::const_iterator DefaultIPv6Route() const;
-    std::vector<RouteInfoIPv6>::const_iterator Find(boost::asio::ip::address_v6 target) const;
+    public:
+      RouteTableIPv6();
+      std::vector<RouteInfoIPv6>::const_iterator DefaultIPv6Route() const;
+      std::vector<RouteInfoIPv6>::const_iterator Find(boost::asio::ip::address_v6 target) const;
 
-  private:
-    auto InitStream(std::istream &stream) -> decltype(stream);
-    auto ReadRouteInfo(std::ifstream &stream, RouteInfoIPv6 &route_info) -> decltype(stream);
+    private:
+      auto InitStream(std::istream &stream) -> decltype(stream);
+      auto ReadRouteInfo(std::ifstream &stream, RouteInfoIPv6 &route_info) -> decltype(stream);
 
-    std::vector<RouteInfoIPv6> route_info_list_;
-    const std::string proc_route_ipv6_ {"/proc/net/ipv6_route"};
+      std::vector<RouteInfoIPv6> route_info_list_;
+      const std::string proc_route_ipv6_ {"/proc/net/ipv6_route"};
   };
 
 }
