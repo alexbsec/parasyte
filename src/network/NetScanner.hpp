@@ -63,6 +63,7 @@ namespace network {
     // Utility methods
     bool IsPortOpen(const std::string& ip_address, int port);
   };
+  
 }
 }
 
