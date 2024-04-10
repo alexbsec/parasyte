@@ -135,19 +135,19 @@ namespace utils {
       };
 
       // Constructors
-    TCPHeader() : header_{} {}
+      TCPHeader() : header_{} {}
     
 
     // Accessors and mutators
 
-    uint16_t Source() const {
-      return ntohs(header_.source); 
-    }
+      uint16_t Source() const {
+        return ntohs(header_.source); 
+      }
 
-    uint16_t Destination() const {
+      uint16_t Destination() const {
         // Used to get the destination port
         return ntohs(header_.dest);
-    }
+      }
 
       uint32_t Sequence() const {
         // Used to get the sequence number
@@ -307,9 +307,9 @@ namespace utils {
         return reinterpret_cast<char*>(&header_);
       }
 
-    struct TCPChecksumStruct; // Forward declaration
+      struct TCPChecksumStruct; // Forward declaration
 
-    void CalculateChecksum(uint32_t source_addr, uint32_t destination_addr) {
+      void CalculateChecksum(uint32_t source_addr, uint32_t destination_addr) {
         TCPChecksum(0);
         struct TCPChecksumStruct tcp_checksum = {{}, {}};
         tcp_checksum.pseudo_header.source = htonl(source_addr);
@@ -319,20 +319,20 @@ namespace utils {
         tcp_checksum.pseudo_header.length = htons(sizeof(header_));
         tcp_checksum.tcp_header = header_;
         header_.check = Checksum(reinterpret_cast<uint16_t*>(&tcp_checksum), sizeof(struct TCPChecksumStruct));   
-    }
+      }
 
-    void CalculateChecksum(const std::string &source_addr, const std::string &destination_addr) {
+      void CalculateChecksum(const std::string &source_addr, const std::string &destination_addr) {
         CalculateChecksum(GetIPv4Address(source_addr).to_ulong(), GetIPv4Address(destination_addr).to_ulong());
-    }
+      }
 
-    // Overloaded operators for input and output 
-    friend std::istream &operator>> (std::istream &is, TCPHeader &header) {
-      return is.read(header.header(), header.length());
-    }
+      // Overloaded operators for input and output 
+      friend std::istream &operator>> (std::istream &is, TCPHeader &header) {
+        return is.read(header.header(), header.length());
+      }
 
-    friend std::ostream &operator<< (std::ostream &os, TCPHeader &header) {
-      return os.write(header.header(), header.length());
-    }
+      friend std::ostream &operator<< (std::ostream &os, TCPHeader &header) {
+        return os.write(header.header(), header.length());
+      }
 
     private:
       // Structs used for checksum calculation
@@ -355,8 +355,18 @@ namespace utils {
   };
 
   class RouteTableIPv6 {
+  public:
+    RouteTableIPv6();
+    std::vector<RouteInfoIPv6>::const_iterator DefaultIPv6Route() const;
+    std::vector<RouteInfoIPv6>::const_iterator Find(boost::asio::ip::address_v6 target) const;
 
-  }
+  private:
+    auto InitStream(std::istream &stream) -> decltype(stream);
+    auto ReadRouteInfo(std::ifstream &stream, RouteInfoIPv6 &route_info) -> decltype(stream);
+
+    std::vector<RouteInfoIPv6> route_info_list_;
+    const std::string proc_route_ipv6_ {"/proc/net/ipv6_route"};
+  };
 
 }
 }
