@@ -26,7 +26,6 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
-#include <netinet/in.h>
 #include <boost/asio/detail/config.hpp>
 #include <boost/asio/detail/socket_types.hpp>
 #include <boost/asio/basic_raw_socket.hpp>
@@ -38,12 +37,19 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/address_v6.hpp>
 #include <netinet/ip6.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
-#ifdef __linux__
+#ifdef _WIN32 // For both 32-bit and 64-bit environments
+  #include <Winsock2.h>
+  #include <Ws2tcpip.h>
+// Ensure to link against the Ws2_32.lib library
+#elif defined(__linux__)
   #include <linux/ipv6.h>
 #elif defined(__APPLE__)
   #include <netinet/ip6.h>
 #endif
+
 
 
 /* CODE START */
@@ -629,6 +635,51 @@ namespace utils {
       header_type header_;
   };
 
+  template<int level, int name, int init = true >
+  class BinaryOption {
+    public:
+      BinaryOption() = default;
+      BinaryOption(bool option_value) : option_value_(option_value) {}
+      ~BinaryOption() = default;
+
+      template<typename Protocol>
+      int Level(Protocol const&) const {
+        return level;
+      }
+
+      template<typename Protocol>
+      int Name(Protocol const&) const {
+        return name;
+      }
+
+      template<typename Protocol>
+      void *Data(Protocol const&) {
+        return reinterpret_cast<void*>(&option_value_);
+      }
+
+      template<typename Protocol>
+      void const *Data(Protocol const&) const {
+        return reinterpret_cast<void const*>(&option_value_);
+      }
+
+      template<typename Protocol>
+      int Size(Protocol const&) const {
+        return sizeof(option_value_);
+      }
+
+      void SetOptionValue(bool option_value) {
+        option_value_ = option_value;
+      }
+
+      bool GetOptionValue() const {
+        return option_value_;
+      }
+
+    private:
+      bool option_value_ = init;
+
+  };
+  
 }
 }
 }
