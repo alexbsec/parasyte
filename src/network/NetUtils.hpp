@@ -37,6 +37,13 @@
 #include <boost/asio/detail/push_options.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/address_v6.hpp>
+#include <netinet/ip6.h>
+
+#ifdef __linux__
+  #include <linux/ipv6.h>
+#elif defined(__APPLE__)
+  #include <netinet/ip6.h>
+#endif
 
 
 /* CODE START */
@@ -54,6 +61,8 @@ namespace utils {
   std::string ReadIPv6Address(const std::string &str);
 
   // Structs
+  struct in6_address StringToAddress(std::string address);
+
   struct iphdr {
     unsigned int ihl:4;       // IP header length
     unsigned int version:4;   // Version
@@ -535,6 +544,89 @@ namespace utils {
 
       std::vector<RouteInfoIPv6> route_info_list_;
       const std::string proc_route_ipv6_ {"/proc/net/ipv6_route"};
+  };
+
+  class IPv6Header {
+    using header_type = struct ipv6hdr;
+
+    public:
+      IPv6Header() : header_{} {}
+
+      uint8_t Version() const {
+        return header_.version;
+      }
+
+      uint8_t TrafficClass() const {
+        return header_.priority;
+      }
+
+      uint16_t PayloadLength() const {
+        return ntohs(header_.payload_len);
+      }
+
+      uint8_t NextHeader() const {
+        return header_.nexthdr;
+      }
+
+      uint8_t HopLimit() const {
+        return header_.hop_limit;
+      }
+
+      boost::asio::ip::address_v6 SourceAddress() const {
+        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(header_.saddr));
+      }
+
+      boost::asio::ip::address_v6 DestinationAddress() const {
+        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(header_.daddr));
+      }
+
+      void Version(uint8_t version) {
+        header_.version = version;
+      }
+
+      void TrafficClass(uint8_t traffic_class) {
+        header_.priority = traffic_class;
+      }
+
+      void PayloadLength(uint16_t payload_length) {
+        header_.payload_len = htons(payload_length);
+      }
+
+      void NextHeader(uint8_t next_header) {
+        header_.nexthdr = next_header;
+      }
+
+      void HopLimit(uint8_t hop_limit) {
+        header_.hop_limit = hop_limit;
+      }
+
+      void SourceAddress(boost::asio::ip::address_v6 source_address) {
+        header_.saddr = utils::StringToAddress(source_address.to_string());
+      }
+
+      void DestinationAddress(boost::asio::ip::address_v6 destination_address) {
+        header_.daddr = utils::StringToAddress(destination_address.to_string());
+      }
+
+
+      char *Header() {
+        return reinterpret_cast<char*>(&header_);
+      }
+
+      std::size_t Length() {
+        return sizeof(header_);
+      }
+
+      friend std::istream &operator>> (std::istream &stream, IPv6Header &header) {
+        return stream.read(header.Header(), header.Length());
+      }
+
+      friend std::ostream &operator<< (std::ostream &stream, IPv6Header &header) {
+        return stream.write(header.Header(), header.Length());
+      }
+      
+    private:
+      header_type header_;
   };
 
 }
