@@ -54,6 +54,20 @@ namespace utils {
   std::string ReadIPv6Address(const std::string &str);
 
   // Structs
+  struct iphdr {
+    unsigned int ihl:4;       // IP header length
+    unsigned int version:4;   // Version
+    uint8_t tos;              // Type of service
+    uint16_t tot_len;         // Total length
+    uint16_t id;              // Identification
+    uint16_t frag_off;        // Fragment offset
+    uint8_t ttl;              // Time to live
+    uint8_t protocol;         // Protocol
+    uint16_t check;           // Checksum
+    uint32_t saddr;           // Source address
+    uint32_t daddr;           // Destination address
+  };
+
 
   struct RouteInfoIPv4 {
     std::string name;
@@ -367,6 +381,147 @@ namespace utils {
       header_type header_;
 
   };
+
+  class RouteTableIPv4 {
+    public:
+      RouteTableIPv4();
+      std::vector<RouteInfoIPv4>::const_iterator DefaultIPv4Route() const;
+      std::vector<RouteInfoIPv4>::const_iterator Find(boost::asio::ip::address_v4 target) const;
+
+    private:
+      std::istream &InitStream(std::istream &stream);
+      std::ifstream &ReadRouteInfo(std::ifstream &stream, RouteInfoIPv4 &route_info);
+
+      std::vector<RouteInfoIPv4> route_info_list_;
+      const std::string proc_route_ipv4_ {"/proc/net/route"};
+  };
+
+  class IPv4Header {
+    public:
+      using header_type = struct iphdr;
+      IPv4Header() : header_{} {}
+
+      uint8_t Version() const {
+        return header_.version;
+      }
+
+      uint8_t HeaderLength() const {
+        return header_.ihl;
+      }
+
+      uint8_t TypeOfService() const {
+        return header_.tos;
+      } 
+
+      uint16_t TotalLength() const {
+        return ntohs(header_.tot_len);
+      }
+
+      uint16_t Identification() const {
+        return ntohs(header_.id);
+      }
+
+      uint16_t FragmentOffset() const {
+        return ntohs(header_.frag_off);
+      }
+
+      uint8_t TTL() const {
+        return header_.ttl;
+      }
+
+      uint8_t Protocol() const {
+        return header_.protocol;
+      }
+
+      uint16_t Checksum() const {
+        return ntohs(header_.check);
+      }
+
+      boost::asio::ip::address_v4 SourceAddress() const {
+        return boost::asio::ip::address_v4(ntohl(header_.saddr));
+      }
+
+      boost::asio::ip::address_v4 DestinationAddress() const {
+        return boost::asio::ip::address_v4(ntohl(header_.daddr));
+      }
+
+      void Version(uint8_t version) {
+        header_.version = version;
+      }
+
+      void HeaderLength(uint8_t header_length) {
+        header_.ihl = header_length;
+      }
+
+      void TypeOfService(uint8_t type_of_service) {
+        header_.tos = type_of_service;
+      }
+
+      void TotalLength(uint16_t total_length) {
+        header_.tot_len = htons(total_length);
+      }
+
+      void Identification(uint16_t identification) {
+        header_.id = htons(identification);
+      }
+
+      void FragmentOffset(uint16_t fragment_offset) {
+        header_.frag_off = htons(fragment_offset);
+      }
+
+      void TTL(uint8_t ttl) {
+        header_.ttl = ttl;
+      }
+
+      void Protocol(uint8_t protocol) {
+        header_.protocol = protocol;
+      }
+
+      void Checksum(uint16_t checksum) {
+        header_.check = htons(checksum);
+      }
+
+      void Checksum() {
+        Checksum(0);
+        Checksum(utils::Checksum(reinterpret_cast<uint16_t*>(&header_), Length()));
+      }
+
+      void SourceAddress(uint32_t source_address) {
+        header_.saddr = htonl(source_address);
+      }
+
+      void DestinationAddress(uint32_t destination_address) {
+        header_.daddr = htonl(destination_address);
+      }
+
+      void SourceAddress(boost::asio::ip::address_v4 source_address) {
+        header_.saddr = htonl(source_address.to_ulong());
+      }
+
+      void DestinationAddress(boost::asio::ip::address_v4 destination_address) {
+        header_.daddr = htonl(destination_address.to_ulong());
+      }
+
+      char *Header() {
+        return reinterpret_cast<char*>(&header_);
+      }
+
+      std::size_t Length() {
+        return sizeof(header_);
+      }
+
+      friend std::istream &operator>> (std::istream &stream, IPv4Header &header) {
+        return stream.read(header.Header(), header.Length());
+      }
+
+      friend std::ostream &operator<< (std::ostream &stream, IPv4Header &header) {
+        return stream.write(header.Header(), header.Length());
+      }
+
+    private:
+      header_type header_;
+  };
+
 
   class RouteTableIPv6 {
     public:
