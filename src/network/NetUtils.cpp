@@ -29,13 +29,6 @@
  * @param buffer_size The size of the buffer in bytes.
  * @return The calculated checksum value.
  */
-/**
- * Calculates the checksum of a buffer.
- * 
- * @param buffer The buffer containing the data to calculate the checksum for.
- * @param buffer_size The size of the buffer in bytes.
- * @return The calculated checksum value.
- */
 uint16_t parasyte::network::utils::Checksum(std::uint16_t *buffer, int buffer_size) {
   unsigned long sum = 0; // Initialize the sum variable to 0
   while (buffer_size > 1) { // Iterate through the buffer in 16-bit chunks
