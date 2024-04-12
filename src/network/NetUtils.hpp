@@ -62,12 +62,12 @@ namespace utils {
   uint16_t Checksum(std::uint16_t *buffer, int buffer_size);
   std::string Inet6AddressToString(struct in6_addr addr);
   std::string Inet4AddressToString(struct in_addr addr);
-  boost::asio::ip::address_v4 GetIPv4Address(const std::string &ip_address);
-  boost::asio::ip::address_v6 GetIPv6Address(const std::string &ip_address);
-  std::string ReadIPv6Address(const std::string &str);
+  boost::asio::ip::address_v4 GetIPv4Address(const std::string &if_name);
+  boost::asio::ip::address_v6 GetIPv6Address(const std::string &if_name);
+  std::string ReadIPv6Address(std::string &str);
 
   // Structs
-  struct in6_address StringToAddress(std::string address);
+  struct in6_addr StringToAddress(std::string address);
 
   struct iphdr {
     unsigned int ihl:4;       // IP header length
