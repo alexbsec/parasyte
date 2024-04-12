@@ -398,7 +398,7 @@ namespace utils {
   };
 
   class RouteTableIPv4 {
-    using const_iterator = std::vector<RouteInfoIPv4>::const_iterator;
+;
     public:
       RouteTableIPv4();
       std::vector<RouteInfoIPv4>::const_iterator DefaultIPv4Route() const;

@@ -18,6 +18,7 @@
 // Include declarations
 
 #include "NetUtils.hpp"
+#include <iostream>
 
 /* CODE START */
 
@@ -192,6 +193,13 @@ std::istream &parasyte::network::utils::RouteTableIPv4::InitStream(std::istream 
   return std::getline(stream, line);
 }
 
+/**
+ * Reads the route information from the input stream and populates the RouteInfoIPv4 object.
+ * 
+ * @param stream The input stream to read from.
+ * @param route_info The RouteInfoIPv4 object to populate.
+ * @return The input stream after reading the route information.
+ */
 std::ifstream &parasyte::network::utils::RouteTableIPv4::ReadRouteInfo(std::ifstream &stream, RouteInfoIPv4 &route_info) {
   uint32_t dest, gateway, netmask;
 
@@ -200,5 +208,63 @@ std::ifstream &parasyte::network::utils::RouteTableIPv4::ReadRouteInfo(std::ifst
   route_info.gateway = boost::asio::ip::address_v4(ntohl(gateway));
   route_info.netmask = boost::asio::ip::address_v4(ntohl(netmask));
 
+  return stream;
+}
+
+/**
+* @brief Constructor for the RouteTableIPv6 class.
+* Reads the route information from the /proc/net/route file and initializes the route_info_list_ member variable.
+*/ 
+parasyte::network::utils::RouteTableIPv6::RouteTableIPv6() {
+  std::ifstream route_table_ipv6_proc(proc_route_ipv6_); // Open the /proc/net/route file for reading
+  InitStream(route_table_ipv6_proc); // Initialize the input stream by reading a line of text from the file
+  for (RouteInfoIPv6 route_info; ReadRouteInfo(route_table_ipv6_proc, route_info);) {
+    route_info_list_.push_back(route_info); // Add the read route information to the route_info_list_
+    break; // Exit the loop after reading the first route information
+  }
+}
+
+/**
+ * @brief Returns an iterator pointing to the first occurrence of a default IPv6 route in the route_info_list_ vector.
+ * 
+ * @return std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator An iterator pointing to the default IPv6 route, or the end iterator if not found.
+ */
+std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator parasyte::network::utils::RouteTableIPv6::DefaultIPv6Route() const {
+  return std::find_if(route_info_list_.begin(), route_info_list_.end(), [](RouteInfoIPv6 const &route_info) {
+    return route_info.dest == boost::asio::ip::address_v6();
+  });
+}
+
+/**
+ * @brief Finds the iterator pointing to the first occurrence of a given target address in the route_info_list_ vector.
+ * 
+ * This function searches for the target address in the route_info_list_ vector and returns the iterator pointing to the first occurrence of the target address.
+ * If the target address is not found, it returns the iterator pointing to the default_table_route.
+ * 
+ * @param target The target address to search for in the route_info_list_ vector.
+ * @return std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator The iterator pointing to the first occurrence of the target address, or the iterator pointing to the default_table_route if the target address is not found.
+ */
+std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator parasyte::network::utils::RouteTableIPv6::Find(boost::asio::ip::address_v6 target) const {
+  std::vector<RouteInfoIPv6>::const_iterator default_table_route = DefaultIPv6Route();
+  std::vector<RouteInfoIPv6>::const_iterator it = route_info_list_.begin();
+
+  for (; it != route_info_list_.end(); ++it) {
+    if (it == default_table_route) continue;
+    if (target == it -> dest) break;
+  }
+  return (it == route_info_list_.end()) ? default_table_route : it;
+}
+
+auto parasyte::network::utils::RouteTableIPv6::InitStream(std::istream &stream) -> decltype(stream) {
+  std::string line;
+  return std::getline(stream, line);
+}
+
+auto parasyte::network::utils::RouteTableIPv6::ReadRouteInfo(std::ifstream &stream, RouteInfoIPv6 &route_info) -> decltype(stream) {
+  std::string dest, source, next_hop;
+  stream >> dest >> route_info.dest_prefix >> source >> std::hex >> route_info.gateway_prefix >> next_hop >> std::hex >> route_info.metric >> std::dec >> route_info.ref_count >> route_info.use >> route_info.flags >> route_info.name;
+  route_info.dest = boost::asio::ip::make_address_v6(ReadIPv6Address(dest));
+  route_info.gateway = boost::asio::ip::make_address_v6(ReadIPv6Address(source));
+  route_info.next_hop = boost::asio::ip::make_address_v6(ReadIPv6Address(next_hop));
   return stream;
 }
