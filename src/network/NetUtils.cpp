@@ -255,11 +255,24 @@ std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator parasyte::n
   return (it == route_info_list_.end()) ? default_table_route : it;
 }
 
+/**
+ * Initializes the input stream by reading a line of text from the stream.
+ * 
+ * @param stream The input stream to initialize.
+ * @return The initialized input stream.
+ */
 auto parasyte::network::utils::RouteTableIPv6::InitStream(std::istream &stream) -> decltype(stream) {
   std::string line;
   return std::getline(stream, line);
 }
 
+/**
+ * Reads route information from the given input stream and populates the provided RouteInfoIPv6 object.
+ *
+ * @param stream The input stream to read from.
+ * @param route_info The RouteInfoIPv6 object to populate with the read route information.
+ * @return The input stream after reading the route information
+ */
 auto parasyte::network::utils::RouteTableIPv6::ReadRouteInfo(std::ifstream &stream, RouteInfoIPv6 &route_info) -> decltype(stream) {
   std::string dest, source, next_hop;
   stream >> dest >> route_info.dest_prefix >> source >> std::hex >> route_info.gateway_prefix >> next_hop >> std::hex >> route_info.metric >> std::dec >> route_info.ref_count >> route_info.use >> route_info.flags >> route_info.name;
