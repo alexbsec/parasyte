@@ -62,7 +62,7 @@ namespace network {
   }
 
   /**
-   * Handles the receive operation for the NetScanner class.
+   * @brief Handles the receive operation for the NetScanner class.
    *
    * This function is called when a receive operation completes. It processes the received data,
    * updates the port status information, and handles any errors that occur during the operation.
@@ -89,10 +89,6 @@ namespace network {
       buffer->commit(len);
       utils::TCPHeader header;
       std::istream stream(&(*buffer));
-      if (protocol_.ProtocolFamily() == AF_INET) {
-        utils::IPv4Header ipv4_header;
-      }
-
       stream >> header;
       if (header.Syn() && header.Ack()) {
         port_info_[header.Source()] =  port_status::OPEN;
@@ -130,5 +126,109 @@ namespace network {
     }
   }
 
+  /**
+   * @brief Function to create a segment for network scanning.
+   *
+   * This function takes a stream buffer and a port number as input and returns a tuple of two integers.
+   * The first integer represents the starting index of the segment in the buffer, and the second integer represents the length of the segment.
+   *
+   * @param buffer The stream buffer to create the segment from.
+   * @param port The port number to include in the segment.
+   * @return A tuple of two integers representing the segment.
+   */
+  std::tuple<int, int> NetScanner::MakeSegment(stream_buffer &buffer, int port) {
+    if (protocol_.ProtocolFamily() == AF_INET) return MakeIPv4Segment(buffer, port);
+    return MakeIPv6Segment(buffer, port);
+  }
+
+  /**
+   * @brief Creates an IPv4 segment using the provided stream buffer and port number.
+   *
+   * This tuple is used to store the result of the MakeIPv4Segment function.
+   * The first integer represents the source address, and the second integer represents the destination address.
+   *
+   * @param buffer The stream buffer used to construct the IPv4 segment.
+   * @param port The destination port for the TCP header.
+   * @return A tuple of two integers representing the source and destination addresses.
+   */
+  std::tuple<int, int> NetScanner::MakeIPv4Segment(stream_buffer &buffer, int port) {
+    buffer.consume(buffer.size());
+    #include <netinet/ip.h> // Include the header file that defines the constant "IP_DF"
+
+    std::ostream stream(&buffer);
+    utils::IPv4Header ipv4_header;
+    auto daddr = destination_.address().to_v4();
+    ipv4_header.Version(4);
+    ipv4_header.HeaderLength(ipv4_header.Length()/4);
+    ipv4_header.TypeOfService(0x10);
+    ipv4_header.FragmentOffset(IP_DF); // Fix: Include the necessary header file that defines the constant "IP_DF"
+    ipv4_header.TTL(IPDEFTTL);
+    ipv4_header.Protocol(IPPROTO_TCP);
+    ipv4_header.SourceAddress(utils::GetIPv4Address(route_table_ipv4_.Find(daddr)->name));
+    ipv4_header.DestinationAddress(daddr);
+
+    uint16_t source = rand();
+    uint32_t sequence = rand();
+    utils::TCPHeader tcp_header;
+    tcp_header.Source(source);
+    tcp_header.Destination(port);
+    tcp_header.Sequence(sequence);
+    tcp_header.DataOffset(20/4);
+    tcp_header.Syn(true);
+    tcp_header.Window(utils::TCPHeader::default_window_value);
+    tcp_header.CalculateChecksum(ipv4_header.SourceAddress().to_ulong(), ipv4_header.DestinationAddress().to_ulong());
+
+    ipv4_header.TotalLength(ipv4_header.Length() + tcp_header.length());
+    ipv4_header.Checksum();
+
+    if (!(stream << ipv4_header << tcp_header)) {
+      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv4 segment. Aborting scan.");
+      return std::make_tuple(0, 0);
+    }
+
+    return std::make_tuple(source, sequence);
+  }
+
+  /**
+   * @brief Creates an IPv6 segment using the provided stream buffer and port number.
+   * 
+   * @param buffer The stream buffer to use for creating the segment.
+   * @param port The port number to set in the TCP header of the segment.
+   * @return A tuple containing the source and sequence numbers of the segment.
+   */
+  std::tuple<int, int> NetScanner::MakeIPv6Segment(stream_buffer &buffer, int port) {
+    buffer.consume(buffer.size());
+    std::ostream stream(&buffer);
+
+    utils::IPv6Header ipv6_header;
+    auto daddr = destination_.address().to_v6();
+    ipv6_header.Version(6);
+    ipv6_header.NextHeader(IPPROTO_TCP);
+    ipv6_header.SourceAddress(utils::GetIPv6Address(route_table_ipv6_.Find(daddr)->name));
+    ipv6_header.DestinationAddress(daddr);
+
+    uint16_t source = rand();
+    uint32_t sequence = rand();
+    utils::TCPHeader tcp_header;
+    tcp_header.Source(source);
+    tcp_header.Destination(port);
+    tcp_header.Sequence(sequence);
+    tcp_header.DataOffset(20/4);
+    tcp_header.Syn(true);
+    tcp_header.Window(utils::TCPHeader::default_window_value);
+
+    if (!(stream << ipv6_header << tcp_header)) {
+      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv6 segment. Aborting scan.");
+      return std::make_tuple(0, 0);
+    }
+    
+    return std::make_tuple(source, sequence);
+  }
+
+  void NetScanner::PopulatePortInfo(int port, port_status status) {
+    if (port_info_.find(port) == port_info_.end()) {
+      port_info_[port] = status;
+    }
+  }
 }
 }
