@@ -19,51 +19,62 @@
 */
 
 // Include declarations
-#include <vector>
 #include <string>
-#include <iostream>
+#include <tuple>
+#include <map>
+#include <set>
+#include <chrono>
+#include <memory>
+#include <netinet/in.h>
+
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/basic_waitable_timer.hpp>
+#include <boost/asio/streambuf.hpp>
+#include <boost/asio/basic_raw_socket.hpp>
+
+#include "NetUtils.hpp"
+
 
 /* CODE START */
 
 namespace parasyte {
 namespace network {
-  // struct for storing host information
-  struct NetworkHost {
-  std::string ip_address;
-  std::string mac_address;
-  int port;
-  std::string service_name;
-  bool is_vulnerable;
-
-  NetworkHost(std::string ip, int p, std::string service, bool vulnerable) 
-  : ip_address(ip), port(p), service_name(service), is_vulnerable(vulnerable) {}
-  };
-
-  // Class declaration for the NetScanner
   class NetScanner {
-  public:
-    NetScanner();
-    ~NetScanner();
+    using stream_buffer = boost::asio::streambuf;
+    using basic_timer = boost::asio::basic_waitable_timer<std::chrono::steady_clock>;
+    using shared_timer = std::shared_ptr<basic_timer>;
+    using shared_buffer = std::shared_ptr<stream_buffer>;
 
-    // Disallow copy and move constructors for safety
-    NetScanner(const NetScanner&) = delete;
-    NetScanner& operator=(const NetScanner&) = delete;
+    struct ScanInfo {
+      int port;
+      std::chrono::steady_clock::time_point send_time;
+      int sequence_number;
+      int own_port;
+    };
 
-    // Retrieves the list of discovered hosts
-    std::vector<NetworkHost> GetHosts() const;
-    
-  private:
-    std::vector<NetworkHost> hosts_;
-      
-    // Private methods
-    void ScanIPAddress(const std::string& ip_address);
-    bool GetName(std::string name, std::string dest);
-    bool GetMacAddress(std::string mac, std::string dest);
+    public:
+      enum port_status {
+        OPEN,
+        CLOSED,
+        FILTERED,
+        ABORTED
+      };
 
-    // Utility methods
-    bool IsPortOpen(const std::string& ip_address, int port);
-  };
-  
+      enum {
+        default_timeout = 4000,
+        buffer_size = 2048,
+      };
+
+      NetScanner(boost::asio::io_context &io_context, const std::string &host, parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol, int miliseconds);
+      ~NetScanner();
+
+      void start_scan(int port_number);
+      std::map<int, port_status> const &port_info() const;
+
+    private:
+      void StartTimer(int miliseconds, ScanInfo scan_info, shared_timer timer);
+
+  };  
 }
 }
 
