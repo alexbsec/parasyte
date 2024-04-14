@@ -33,7 +33,7 @@
 #include <boost/asio/basic_raw_socket.hpp>
 
 #include "NetUtils.hpp"
-
+#include "../error_handler/ErrorHandler.hpp"
 
 /* CODE START */
 
@@ -68,13 +68,13 @@ namespace network {
       NetScanner(boost::asio::io_context &io_context, const std::string &host, parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol, int miliseconds);
       ~NetScanner();
 
-      void start_scan(int port_number);
+      void StartScan(int port_number);
       std::map<int, port_status> const &port_info() const;
 
     private:
       void StartTimer(int miliseconds, ScanInfo scan_info, shared_timer timer);
       void StartReceive(ScanInfo scan_info, shared_timer timer);
-      void HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_timer timer);
+      void HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer);
       void HandleReceive(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
       void Timeout(const boost::system::error_code &error, ScanInfo scan_info, shared_timer timer);
       std::tuple<int, int> MakeSegment(stream_buffer &buffer, int port);
@@ -91,6 +91,7 @@ namespace network {
       std::map<int, port_status> port_info_;
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_; 
+      parasyte::error_handler::ErrorHandler error_handler_;
 
   };  
 }

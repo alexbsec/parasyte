@@ -117,6 +117,9 @@ std::string parasyte::network::utils::ReadIPv6Address(std::string &str) {
 * @param address The string representation of the IPv6 address.
 * @return The struct in6_addr representing the IPv6 address.
 */
+
+#include <netinet/in.h> // Include the header file that defines the in6_addr structure
+
 struct in6_addr parasyte::network::utils::StringToAddress(std::string address) {
   struct in6_addr addr;
   inet_pton(AF_INET6, address.c_str(), &(addr));
