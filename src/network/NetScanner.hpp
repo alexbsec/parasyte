@@ -73,6 +73,24 @@ namespace network {
 
     private:
       void StartTimer(int miliseconds, ScanInfo scan_info, shared_timer timer);
+      void StartReceive(ScanInfo scan_info, shared_timer timer);
+      void HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_timer timer);
+      void HandleReceive(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
+      void Timeout(const boost::system::error_code &error, ScanInfo scan_info, shared_timer timer);
+      std::tuple<int, int> MakeSegment(stream_buffer &buffer, int port);
+      std::tuple<int, int> MakeIPv4Segment(stream_buffer &buffer, int port);
+      std::tuple<int, int> MakeIPv6Segment(stream_buffer &buffer, int port);
+      void PopulatePortInfo(int port, port_status status);
+
+      int timeout_miliseconds_;
+      std::set<int> timeout_port_;
+      boost::asio::io_context &io_context_;
+      parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
+      parasyte::network::utils::RawProtocol::basic_endpoint destination_;
+      parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
+      std::map<int, port_status> port_info_;
+      parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
+      parasyte::network::utils::RouteTableIPv6 route_table_ipv6_; 
 
   };  
 }
