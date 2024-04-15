@@ -29,7 +29,7 @@ Please ensure that you are operating within a safe and isolated environment befo
 
 ## Contributing
 
-Contributions to the Parasyte project are welcome, especially in the areas of security analysis, feature enhancement, and documentation. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests to us.
+Contributions to the Parasyte project are welcome, especially in the areas of security analysis, feature enhancement, and documentation. Please read [CONTRIBUTING.md](https://github.com/alexbsec/parasyte/blob/master/docs/CONTRIBUTE.md) for details on our code of conduct and the process for submitting pull requests to us.
 
 ## License
 
