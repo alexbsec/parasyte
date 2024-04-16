@@ -1,4 +1,4 @@
-#include "NetScanner.hpp"
+#include "network/NetScanner.hpp"
 #include <iostream>
 
 int main() {
