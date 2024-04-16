@@ -72,7 +72,7 @@ namespace network {
       std::map<int, port_status> const &port_info() const;
 
     private:
-      void StartTimer(int miliseconds, ScanInfo scan_info, shared_timer timer);
+      void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
       void StartReceive(ScanInfo scan_info, shared_timer timer);
       void HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer);
       void HandleReceive(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
@@ -86,7 +86,7 @@ namespace network {
       std::set<int> timeout_port_;
       boost::asio::io_context &io_context_;
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
-      parasyte::network::utils::RawProtocol::basic_endpoint destination_;
+      parasyte::network::utils::RawProtocol::endpoint destination_;
       parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       std::map<int, port_status> port_info_;
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;

@@ -3,6 +3,7 @@
 #include <istream>
 #include <chrono>
 #include <functional>
+#include <netinet/ip.h>
 
 #include "NetScanner.hpp"
 #include "NetUtils.hpp"
@@ -19,7 +20,7 @@ namespace network {
     utils::RawProtocol::basic_resolver resolver(io_context);
     utils::RawProtocol::basic_resolver::query query(protocol, host, "", boost::asio::ip::resolver_query_base::numeric_service);
     destination_ = *resolver.resolve(query);
-    if (protocol.ProtocolFamily() == AF_INET) {
+    if (protocol.family() == AF_INET) {
       socket_.set_option(utils::BinaryOption<SOL_IP, IP_HDRINCL, true>(true));
     }
   }
@@ -137,7 +138,7 @@ namespace network {
    * @return A tuple of two integers representing the segment.
    */
   std::tuple<int, int> NetScanner::MakeSegment(stream_buffer &buffer, int port) {
-    if (protocol_.ProtocolFamily() == AF_INET) return MakeIPv4Segment(buffer, port);
+    if (protocol_.family() == AF_INET) return MakeIPv4Segment(buffer, port);
     return MakeIPv6Segment(buffer, port);
   }
 
@@ -153,7 +154,8 @@ namespace network {
    */
   std::tuple<int, int> NetScanner::MakeIPv4Segment(stream_buffer &buffer, int port) {
     buffer.consume(buffer.size());
-    #include <netinet/ip.h> // Include the header file that defines the constant "IP_DF"
+
+
 
     std::ostream stream(&buffer);
     utils::IPv4Header ipv4_header;
@@ -229,6 +231,29 @@ namespace network {
     if (port_info_.find(port) == port_info_.end()) {
       port_info_[port] = status;
     }
+  }
+
+  void NetScanner::HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
+    if (error) {
+      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+    } else {
+      shared_timer timer = std::make_shared<basic_timer>(io_context_);
+      StartTimer(timeout_miliseconds_, scan_info, timer);
+      StartReceive(scan_info, timer);
+    }
+  }
+
+  void NetScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
+    auto &&buffer = std::make_shared<stream_buffer>();
+    socket_.async_receive(
+      buffer->prepare(buffer_size),
+      std::bind(&NetScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
+    );
+  }
+
+  void NetScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
+    timer->expires_from_now(std::chrono::milliseconds(milliseconds));
+    timer->async_wait(std::bind(&NetScanner::Timeout, this, _1, scan_info, timer));
   }
 }
 }
