@@ -19,6 +19,7 @@
 
 #include "NetUtils.hpp"
 #include <iostream>
+#include <arpa/inet.h> 
 
 /* CODE START */
 
@@ -48,7 +49,7 @@ uint16_t parasyte::network::utils::Checksum(std::uint16_t *buffer, int buffer_si
  * @param addr The IPv6 address to convert.
  * @return The string representation of the IPv6 address.
  */
-std::string parasyte::network::utils::Inet6AddressToString(struct in6_addr *addr) {
+std::string parasyte::network::utils::Inet6AddressToString(const struct in6_addr *addr) {
   char str[INET6_ADDRSTRLEN];
   inet_ntop(AF_INET6, addr, str, INET6_ADDRSTRLEN);
   return std::string(str);
@@ -60,7 +61,7 @@ std::string parasyte::network::utils::Inet6AddressToString(struct in6_addr *addr
  * @param addr The IPv4 address to convert.
  * @return The string representation of the IPv4 address.
  */
-std::string parasyte::network::utils::Inet4AddressToString(struct in_addr *addr) {
+std::string parasyte::network::utils::Inet4AddressToString(const struct in_addr *addr) {
   char str[INET_ADDRSTRLEN];
   inet_ntop(AF_INET, addr, str, INET_ADDRSTRLEN);
   return std::string(str);
@@ -95,7 +96,7 @@ boost::asio::ip::address_v6 parasyte::network::utils::GetIPv6Address(const std::
   strncpy(ifr.ifr_name, if_name.c_str(), IFNAMSIZ-1); // Copy the network interface name to the structure
   ioctl(socket_fd, SIOCGIFADDR, &ifr); // Retrieve the network interface address using the ioctl system call
   close(socket_fd); // Close the socket
-  std::string address_string = Inet6AddressToString(((struct sockaddr_in6 *) &ifr.ifr_addr) -> sin6_addr); // Convert the retrieved address to a string
+  std::string address_string = Inet6AddressToString(&((struct sockaddr_in6 *)&ifr.ifr_addr)->sin6_addr);
   return boost::asio::ip::make_address_v6(address_string); // Convert the retrieved address to boost::asio::ip::address_v6 format and return it
 }
 

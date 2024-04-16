@@ -60,8 +60,8 @@ namespace utils {
   // Utility prototypes
 
   uint16_t Checksum(std::uint16_t *buffer, int buffer_size);
-  std::string Inet6AddressToString(struct in6_addr addr);
-  std::string Inet4AddressToString(struct in_addr addr);
+  std::string Inet6AddressToString(const struct in6_addr *addr);
+  std::string Inet4AddressToString(const struct in_addr *addr);
   boost::asio::ip::address_v4 GetIPv4Address(const std::string &if_name);
   boost::asio::ip::address_v6 GetIPv6Address(const std::string &if_name);
   std::string ReadIPv6Address(std::string &str);
@@ -115,37 +115,37 @@ namespace utils {
   class RawProtocol {
     public:
       // Type definitions
-      using basic_endpoint = boost::asio::ip::basic_endpoint<RawProtocol>;
+      using endpoint = boost::asio::ip::basic_endpoint<RawProtocol>;
       using basic_raw_socket = boost::asio::basic_raw_socket<RawProtocol>;
       using basic_resolver = boost::asio::ip::basic_resolver<RawProtocol>;
 
       // Constructors
-      static RawProtocol IPv4() {
+      static RawProtocol v4() {
         return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET));
       }
 
-      static RawProtocol IPv6() {
+      static RawProtocol v6() {
         return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET6));
       }
 
       // Accessors and mutators
-      int ProtocolType() const {
+      int type() const {
         // Used to determine the protocol type
         return BOOST_ASIO_OS_DEF(SOCK_RAW);
       }
 
-      int ProtocolFamily() const {
+      int family() const {
         // Used to determine the protocol family
         return family_;
       }
 
-      int Protocol() const {
+      int protocol() const {
         // Used to determine the protocol
         return protocol_;
       }
 
       // Mutator for the protocol
-      void Protocol(int protocol) {
+      void protocol(int protocol) {
         protocol_ = protocol;
       }
 
@@ -349,8 +349,6 @@ namespace utils {
       char *header() {
         return reinterpret_cast<char*>(&header_);
       }
-
-      struct TCPChecksumStruct; // Forward declaration
 
       void CalculateChecksum(uint32_t source_addr, uint32_t destination_addr) {
         TCPChecksum(0);
@@ -580,11 +578,11 @@ namespace utils {
       }
 
       boost::asio::ip::address_v6 SourceAddress() const {
-        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(header_.saddr));
+        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(&header_.saddr));
       }
 
       boost::asio::ip::address_v6 DestinationAddress() const {
-        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(header_.daddr));
+        return boost::asio::ip::make_address_v6(utils::Inet6AddressToString(&header_.daddr));
       }
 
       void Version(uint8_t version) {
@@ -636,7 +634,7 @@ namespace utils {
       header_type header_;
   };
 
-  template<int level, int name, int init = true >
+  template<int Level, int Name, int Init = true >
   class BinaryOption {
     public:
       BinaryOption() = default;
@@ -644,27 +642,27 @@ namespace utils {
       ~BinaryOption() = default;
 
       template<typename Protocol>
-      int Level(Protocol const&) const {
-        return level;
+      int level(Protocol const&) const {
+        return Level;
       }
 
       template<typename Protocol>
-      int Name(Protocol const&) const {
-        return name;
+      int name(Protocol const&) const {
+        return Name;
       }
 
       template<typename Protocol>
-      void *Data(Protocol const&) {
+      void *data(Protocol const&) {
         return reinterpret_cast<void*>(&option_value_);
       }
 
       template<typename Protocol>
-      void const *Data(Protocol const&) const {
+      void const *data(Protocol const&) const {
         return reinterpret_cast<void const*>(&option_value_);
       }
 
       template<typename Protocol>
-      int Size(Protocol const&) const {
+      int size(Protocol const&) const {
         return sizeof(option_value_);
       }
 
@@ -677,7 +675,7 @@ namespace utils {
       }
 
     private:
-      bool option_value_ = init;
+      bool option_value_ = Init;
 
   };
   
