@@ -55,6 +55,9 @@ namespace error_handler {
           case INFO:
             formatted_message << "[*] ";
             break;
+          case NIL:
+            formatted_message << "";
+            break;
         }
         formatted_message << error_message;
 
