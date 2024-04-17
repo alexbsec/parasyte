@@ -261,7 +261,7 @@ namespace network {
     ipv4_header.Checksum();
 
     if (!(stream << ipv4_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv4 segment. Aborting scan.");
+      error_handler_.HandleError("Error creating IPv4 segment. Aborting scan.");
       return std::make_tuple(0, 0);
     }
 
@@ -298,7 +298,7 @@ namespace network {
     tcp_header.Window(utils::TCPHeader::default_window_value);
 
     if (!(stream << ipv6_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv6 segment. Aborting scan.");
+      error_handler_.HandleError("Error creating IPv6 segment. Aborting scan.");
       return std::make_tuple(0, 0);
     }
 
