@@ -1,0 +1,66 @@
+---
+Language:      Cpp
+BasedOnStyle:  Google
+
+AccessModifierOffset: 0
+IndentAccessModifiers: true
+
+AlignAfterOpenBracket: BlockIndent
+AlignEscapedNewlines: Left
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+#     
+BreakBeforeBraces: Custom
+AllowShortLambdasOnASingleLine: Empty
+BraceWrapping:   
+  AfterClass:            false
+  AfterControlStatement: false
+  AfterEnum:             false
+  AfterFunction:         false
+  AfterNamespace:        false
+  AfterStruct:           false
+  AfterUnion:            true
+  AfterExternBlock:      true
+  BeforeCatch:           true
+  BeforeElse:            false
+  SplitEmptyFunction:    true
+  SplitEmptyRecord:      true
+  SplitEmptyNamespace:   true
+  BeforeLambdaBody:      false
+BreakInheritanceList: AfterComma
+# BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: true
+PackConstructorInitializers: CurrentLine
+# BreakConstructorInitializers: BeforeColon
+# BreakStringLiterals: true
+ColumnLimit:     127
+# ConstructorInitializerAllOnOneLineOrOnePerLine: false
+# ConstructorInitializerIndentWidth: 2
+IndentCaseLabels: true
+ContinuationIndentWidth: 2
+FixNamespaceComments: false
+IncludeBlocks:   Preserve
+IndentWidth:     2
+NamespaceIndentation: Inner
+SpaceAfterTemplateKeyword: false
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterOverloadedOperator: false
+TabWidth:        2
+UseTab:          Never
+
+
+## The following we more inconsisten than other features, these are my
+#  suggestions that seemed to match the majority of the codebase best
+#DerivePointerAlignment: true
+PointerAlignment: Right
+#SpaceAroundPointerQualifiers: Default
+ReferenceAlignment: Left
