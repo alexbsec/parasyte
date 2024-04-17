@@ -46,9 +46,9 @@ namespace error_handler {
         std::stringstream formatted_message;
         // Prefix message based on error type
         switch (error_type_) {
-            case NIL:
-                formatted_message << "[NIL] ";
-                break;
+          case NIL:
+            formatted_message << "[NIL] ";
+            break;
           case ERROR:
             formatted_message << "[x] ";
             break;
@@ -57,9 +57,6 @@ namespace error_handler {
             break;
           case INFO:
             formatted_message << "[*] ";
-            break;
-          case NIL:
-            formatted_message << "";
             break;
         }
         formatted_message << error_message;

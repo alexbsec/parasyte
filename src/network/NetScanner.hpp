@@ -69,7 +69,7 @@ namespace network {
       NetScanner(boost::asio::io_context &io_context, const std::string &host, parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol, int miliseconds);
       ~NetScanner();
 
-      void StartScan(int port_number);
+      void StartScan(uint16_t port_number);
       std::map<int, port_status> const &port_info() const;
 
     private:
@@ -82,7 +82,7 @@ namespace network {
       SrcSeq MakeSegment(stream_buffer &buffer, uint16_t port);
       SrcSeq MakeIPv4Segment(stream_buffer &buffer, uint16_t port);
       SrcSeq MakeIPv6Segment(stream_buffer &buffer, uint16_t port);
-      void PopulatePortInfo(uint16_t port, port_status status);
+      void PopulatePortInfo(int port, port_status status);
 
       int timeout_miliseconds_;
       std::set<uint16_t> timeout_port_;
