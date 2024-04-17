@@ -52,18 +52,69 @@ namespace network {
     //   The callback function that will be called when the send operation completes.
     //   It takes two parameters: error, which indicates if an error occurred during the send operation, and len, which represents the number of bytes sent.
     //   The callback function calls the HandleScan() function to handle the scan results.
-    // socket_.async_send_to(
-    //   buffer->data(),
-    //   destination_,
-    //   [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
-    //   (const boost::system::error_code& error, std::size_t len) {
-    //     this->HandleScan(error, len, scan_info, buffer); 
-    //   }
-    // );
     socket_.async_send_to(
       buffer->data(), destination_,
       std::bind(&NetScanner::HandleScan, this, _1, _2, NetScanner::ScanInfo{port_number, send_time}, buffer)
     );
+  }
+
+  /**
+   * @brief Returns the port information stored in the NetScanner object.
+   * 
+   * @return A constant reference to a map containing port status information.
+   *         The map key is an integer representing the port number, and the value
+   *         is an object of type parasyte::network::NetScanner::port_status.
+   */
+  std::map<int, parasyte::network::NetScanner::port_status> const &NetScanner::PortInfo() const {
+    return port_info_;
+  }
+
+  /**
+   * Starts a timer with the specified duration and scan information.
+   * 
+   * @param milliseconds The duration of the timer in milliseconds.
+   * @param scan_info The scan information to be passed to the timeout handler.
+   * @param timer The shared pointer to the timer object.
+   */
+  void NetScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
+    timer->expires_from_now(std::chrono::milliseconds(milliseconds));
+    timer->async_wait(std::bind(&NetScanner::Timeout, this, _1, scan_info, timer));
+  }
+
+  /**
+   * Starts the asynchronous receive operation on the socket.
+   * 
+   * @param scan_info The scan information.
+   * @param timer The shared timer object.
+   */
+  void NetScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
+    auto &&buffer = std::make_shared<stream_buffer>();
+    socket_.async_receive(
+      buffer->prepare(buffer_size),
+      std::bind(&NetScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
+    );
+  }
+
+  /**
+   * @brief Handles the completion of a scan operation.
+   *
+   * This function is called when a scan operation is completed. It checks for any errors and handles them accordingly.
+   * If no errors occur, it starts a timer and initiates the receive operation.
+   *
+   * @param error The error code associated with the completion of the scan operation.
+   * @param len The size of the received data.
+   * @param scan_info The information about the scan.
+   * @param buffer The shared buffer containing the received data.
+   */
+  void NetScanner::HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
+    if (error) {
+      error_handler_.HandleError(error.message());
+    } else {
+      shared_timer timer = std::make_shared<basic_timer>(io_context_);
+      std::cout << "Starting timer.." << std::endl;
+      StartTimer(timeout_miliseconds_, scan_info, timer);
+      StartReceive(scan_info, timer);
+    }
   }
 
   /**
@@ -231,38 +282,21 @@ namespace network {
     return std::make_tuple(source, sequence);
   }
 
+  /**
+   * @brief Populates the port information for a given port.
+   * 
+   * This function adds or updates the status of a port in the port_info_ map.
+   * If the port does not exist in the map, it is added with the given status.
+   * If the port already exists in the map, its status is updated with the given status.
+   * 
+   * @param port The port number.
+   * @param status The status of the port.
+   */
   void NetScanner::PopulatePortInfo(int port, port_status status) {
     if (port_info_.find(port) == port_info_.end()) {
       port_info_[port] = status;
     }
   }
 
-  void NetScanner::HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
-    if (error) {
-      error_handler_.HandleError(error.message());
-    } else {
-      shared_timer timer = std::make_shared<basic_timer>(io_context_);
-      std::cout << "Starting timer.." << std::endl;
-      StartTimer(timeout_miliseconds_, scan_info, timer);
-      StartReceive(scan_info, timer);
-    }
-  }
-
-  void NetScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
-    auto &&buffer = std::make_shared<stream_buffer>();
-    socket_.async_receive(
-      buffer->prepare(buffer_size),
-      std::bind(&NetScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
-    );
-  }
-
-  void NetScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
-    timer->expires_from_now(std::chrono::milliseconds(milliseconds));
-    timer->async_wait(std::bind(&NetScanner::Timeout, this, _1, scan_info, timer));
-  }
-
-  std::map<int, parasyte::network::NetScanner::port_status> const &NetScanner::PortInfo() const {
-    return port_info_;
-  }
 }
 }
