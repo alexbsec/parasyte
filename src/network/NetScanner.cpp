@@ -158,7 +158,7 @@ namespace network {
    */
   void NetScanner::HandleScan(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
     if (error) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
     } else {
       shared_timer timer = std::make_shared<basic_timer>(io_context_);
       StartTimer(timeout_miliseconds_, scan_info, timer);

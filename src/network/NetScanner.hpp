@@ -49,8 +49,8 @@ namespace network {
     struct ScanInfo {
       uint16_t port;
       std::chrono::steady_clock::time_point send_time;
-      int sequence_number;
-      int own_port;
+      uint16_t sequence_number = 0;
+      uint16_t own_port = 0;
     };
 
     public:

@@ -40,7 +40,7 @@ uint16_t parasyte::network::utils::Checksum(std::uint16_t *buffer, size_t buffer
   if (buffer_size == 1) sum += *(unsigned char *)buffer; // If there is an odd byte remaining, add it to the sum
   sum = (sum & 0xFFFF) + (sum >> 16); // Add the carry bits to the sum
   sum = (sum & 0xFFFF) + (sum >> 16); // Add any remaining carry bits
-  return ~sum; // Return the one's complement of the sum as the checksum value
+  return static_cast<uint16_t>(~sum); // Return the one's complement of the sum as the checksum value
 }
 
 /**

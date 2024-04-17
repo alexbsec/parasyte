@@ -286,47 +286,49 @@ namespace utils {
 
       void Reserved1(uint16_t reserved) {
         // Used to set the reserved field
-        header_.res1 = reserved;
+        header_.res1 = reserved & 0x0F;
       }
 
       void DataOffset(uint16_t data_offset) {
         // Used to set the data offset
-        header_.doff = data_offset;
+        // Bitwise AND operation to ensure that only the last four bits are set
+        header_.doff = data_offset & 0x0F;
       }
 
       void Fin(uint16_t fin) {
         // Used to set the FIN flag
-        header_.fin = fin;
+        header_.fin = (fin != 0) ? 1 : 0;
       }
 
       void Syn(uint16_t syn) {
         // Used to set the SYN flag
-        header_.syn = syn;
+        header_.syn = (syn != 0) ? 1 : 0;
       }
 
       void Rst(uint16_t rst) {
         // Used to set the RST flag
-        header_.rst = rst;
+        header_.rst = (rst != 0) ? 1 : 0;
       }
 
       void Psh(uint16_t psh) {
         // Used to set the PSH flag
-        header_.psh = psh;
+        header_.psh = (psh != 0) ? 1 : 0;
       }
 
       void Ack(uint16_t ack) {
         // Used to set the ACK flag
-        header_.ack = ack;
+        header_.ack = (ack != 0) ? 1 : 0;
       }
 
       void Urg(uint16_t urg) {
         // Used to set the URG flag
-        header_.urg = urg;
+        header_.urg = (urg != 0) ? 1 : 0;
       }
 
       void Reserved2(uint16_t reserved) {
         // Used to set the reserved field
-        header_.res2 = reserved;
+        // Bitwise AND operation to ensure that only the last two bits are set
+        header_.res2 = reserved & 0x03;
       }
 
       void Window(uint16_t window) {
@@ -464,11 +466,13 @@ namespace utils {
       }
 
       void Version(uint8_t version) {
-        header_.version = version;
+        // Bitwise AND operation to ensure that only the last four bits are set
+        header_.version = version & 0x0F;
       }
 
       void HeaderLength(uint8_t header_length) {
-        header_.ihl = header_length;
+        // Bitwise AND operation to ensure that only the last four bits are set
+        header_.ihl = header_length & 0x0F;
       }
 
       void TypeOfService(uint8_t type_of_service) {
@@ -513,11 +517,11 @@ namespace utils {
       }
 
       void SourceAddress(boost::asio::ip::address_v4 source_address) {
-        header_.saddr = htonl(source_address.to_ulong());
+        header_.saddr = htonl(static_cast<uint32_t>(source_address.to_ulong()));
       }
 
       void DestinationAddress(boost::asio::ip::address_v4 destination_address) {
-        header_.daddr = htonl(destination_address.to_ulong());
+        header_.daddr = htonl(static_cast<uint32_t>(destination_address.to_ulong()));
       }
 
       char *Header() {
@@ -590,11 +594,13 @@ namespace utils {
       }
 
       void Version(uint8_t version) {
-        header_.version = version;
+        // bitwise AND operation to ensure that only the last four bits are set
+        header_.version = version & 0x0F;
       }
 
       void TrafficClass(uint8_t traffic_class) {
-        header_.priority = traffic_class;
+        // bitwise AND operation to ensure that only the last four bits are set
+        header_.priority = traffic_class & 0x0F;
       }
 
       void PayloadLength(uint16_t payload_length) {
