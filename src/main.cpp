@@ -5,11 +5,11 @@
 int main() {
   try {
     boost::asio::io_context io_context;
-    std::string host = "192.168.88.88";
+    std::string host = "127.0.0.1";
     parasyte::network::utils::RawProtocol protocol = parasyte::network::utils::RawProtocol::v4();
     int timeout = 10000;
     parasyte::network::NetScanner scanner(io_context, host, protocol, timeout);
-    uint16_t port_to_scan = 22;
+    uint16_t port_to_scan = 5555;
     scanner.StartScan(port_to_scan);
     io_context.run();
     std::cout << "PORT\tSTATUS\n";
