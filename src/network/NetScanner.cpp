@@ -4,6 +4,7 @@
 #include <chrono>
 #include <functional>
 #include <netinet/ip.h>
+#include <random>
 
 #include "NetScanner.hpp"
 #include "NetUtils.hpp"

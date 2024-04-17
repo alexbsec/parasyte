@@ -88,9 +88,9 @@ namespace network {
       int timeout_miliseconds_;
       std::set<int> timeout_port_;
       boost::asio::io_context &io_context_;
+      parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
       parasyte::network::utils::RawProtocol::endpoint destination_;
-      parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       std::map<int, port_status> port_info_;
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_; 

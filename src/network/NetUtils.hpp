@@ -36,6 +36,7 @@
 #include <boost/asio/detail/push_options.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/address_v6.hpp>
+#include <boost/asio.hpp>
 #include <netinet/ip6.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -112,6 +113,7 @@ namespace utils {
   };
 
   // Utility classes
+
   class RawProtocol {
     public:
       // Type definitions
@@ -121,11 +123,11 @@ namespace utils {
 
       // Constructors
       static RawProtocol v4() {
-        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET));
+        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET), IPPROTO_RAW);
       }
 
       static RawProtocol v6() {
-        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET6));
+        return RawProtocol(BOOST_ASIO_OS_DEF(AF_INET6), IPPROTO_RAW);
       }
 
       // Accessors and mutators
@@ -163,7 +165,7 @@ namespace utils {
       }
 
     private:
-      explicit RawProtocol(int protocol) : family_(protocol) {}
+      explicit RawProtocol(int family, int protocol) : family_(family), protocol_(protocol) {}
       int family_;
       int protocol_;
 
