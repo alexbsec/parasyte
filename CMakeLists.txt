@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Find Boost, specifying the components you need
 find_package(Boost 1.83.0 REQUIRED COMPONENTS filesystem system)
 
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+endif()
+
 # List of all source files
 set(SOURCE_FILES
     src/main.cpp
