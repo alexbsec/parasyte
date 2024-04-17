@@ -59,7 +59,7 @@ namespace network {
 namespace utils {
   // Utility prototypes
 
-  uint16_t Checksum(std::uint16_t *buffer, int buffer_size);
+  uint16_t Checksum(std::uint16_t *buffer, size_t buffer_size);
   std::string Inet6AddressToString(const struct in6_addr *addr);
   std::string Inet4AddressToString(const struct in_addr *addr);
   boost::asio::ip::address_v4 GetIPv4Address(const std::string &if_name);
@@ -363,16 +363,18 @@ namespace utils {
       }
 
       void CalculateChecksum(const std::string &source_addr, const std::string &destination_addr) {
-        CalculateChecksum(GetIPv4Address(source_addr).to_ulong(), GetIPv4Address(destination_addr).to_ulong());
+          uint32_t s = static_cast<uint32_t>(GetIPv4Address(source_addr).to_ulong());
+          uint32_t d = static_cast<uint32_t>(GetIPv4Address(destination_addr).to_ulong());
+          CalculateChecksum(s, d);
       }
 
       // Overloaded operators for input and output 
       friend std::istream &operator>> (std::istream &is, TCPHeader &header) {
-        return is.read(header.header(), header.length());
+        return is.read(header.header(), static_cast<std::streamsize>(header.length()));
       }
 
       friend std::ostream &operator<< (std::ostream &os, TCPHeader &header) {
-        return os.write(header.header(), header.length());
+        return os.write(header.header(), static_cast<std::streamsize>(header.length()));
       }
 
     private:
@@ -396,7 +398,7 @@ namespace utils {
   };
 
   class RouteTableIPv4 {
-;
+
     public:
       RouteTableIPv4();
       std::vector<RouteInfoIPv4>::const_iterator DefaultIPv4Route() const;
@@ -497,7 +499,7 @@ namespace utils {
 
       void Checksum() {
         Checksum(0);
-        Checksum(utils::Checksum(reinterpret_cast<uint16_t*>(&header_), Length()));
+        Checksum(utils::Checksum(reinterpret_cast<uint16_t*>(&header_), static_cast<uint32_t>(Length())));
       }
 
       void SourceAddress(uint32_t source_address) {
@@ -525,11 +527,11 @@ namespace utils {
       }
 
       friend std::istream &operator>> (std::istream &stream, IPv4Header &header) {
-        return stream.read(header.Header(), header.Length());
+        return stream.read(header.Header(), static_cast<std::streamsize>(header.Length()));
       }
 
       friend std::ostream &operator<< (std::ostream &stream, IPv4Header &header) {
-        return stream.write(header.Header(), header.Length());
+        return stream.write(header.Header(), static_cast<std::streamsize>(header.Length()));
       }
 
     private:
@@ -623,11 +625,11 @@ namespace utils {
       }
 
       friend std::istream &operator>> (std::istream &stream, IPv6Header &header) {
-        return stream.read(header.Header(), header.Length());
+        return stream.read(header.Header(), static_cast<std::streamsize>(header.Length()));
       }
 
       friend std::ostream &operator<< (std::ostream &stream, IPv6Header &header) {
-        return stream.write(header.Header(), header.Length());
+        return stream.write(header.Header(), static_cast<std::streamsize>(header.Length()));
       }
       
     private:

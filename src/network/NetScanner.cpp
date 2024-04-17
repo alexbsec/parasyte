@@ -4,6 +4,7 @@
 #include <chrono>
 #include <functional>
 #include <netinet/ip.h>
+#include <random>
 
 #include "NetScanner.hpp"
 #include "NetUtils.hpp"
@@ -37,7 +38,7 @@ namespace network {
    * 
    * @param port_number The port number to scan.
    */
-  void NetScanner::StartScan(int port_number) {
+  void NetScanner::StartScan(uint16_t port_number) {
     auto buffer = std::make_shared<stream_buffer>();
     MakeSegment(*buffer, port_number);
     auto send_time = std::chrono::steady_clock::now();
@@ -48,7 +49,7 @@ namespace network {
     // - [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
     //   A lambda function that will be called when the send operation completes.
     //   It captures the current object instance (this), the buffer, and creates a scan_info object with the port_number and send_time.
-    // - (const boost::system::error_code& error, std::size_t len)
+    // - (const error_code& error, size_t len)
     //   The callback function that will be called when the send operation completes.
     //   It takes two parameters: error, which indicates if an error occurred during the send operation, and len, which represents the number of bytes sent.
     //   The callback function calls the HandleScan() function to handle the scan results.
@@ -56,7 +57,7 @@ namespace network {
       buffer->data(),
       destination_,
       [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
-      (const boost::system::error_code& error, std::size_t len) {
+      (error_code error, size_t len) {
         this->HandleScan(error, len, scan_info, buffer); 
       }
     );
@@ -74,17 +75,17 @@ namespace network {
    * @param buffer The shared buffer containing the received data.
    * @param timer The shared timer used for timeout handling.
    */
-  void NetScanner::HandleReceive(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
+  void NetScanner::HandleReceive(error_code error, size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
     // Checks if the receive operation was aborted due to a timeout.
     if (error == boost::asio::error::operation_aborted) {
-      if (timeout_port_.find(scan_info.port) == timeout_port_.end()) {
+      if (!timeout_port_.contains(scan_info.port)) {
         StartReceive(scan_info, timer);
       } else {
         PopulatePortInfo(scan_info.port, port_status::FILTERED);
       }
       return;
     } else if (error) { // Checks if an error occurred during the receive operation.
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
       PopulatePortInfo(scan_info.port, port_status::ABORTED);
     } else { // Processes the received data.
       buffer->commit(len);
@@ -116,11 +117,11 @@ namespace network {
    * @param scan_info The information about the scan that timed out.
    * @param timer The shared timer object used for the scan.
    */
-  void NetScanner::Timeout(const boost::system::error_code &error, ScanInfo scan_info, shared_timer timer) {
+  void NetScanner::Timeout(error_code error, ScanInfo scan_info, [[maybe_unused]] shared_timer timer) {
     if (error == boost::asio::error::operation_aborted) {
       return;
     } else if (error) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
     } else {
       timeout_port_.insert(scan_info.port);
       socket_.cancel();
@@ -137,7 +138,7 @@ namespace network {
    * @param port The port number to include in the segment.
    * @return A tuple of two integers representing the segment.
    */
-  std::tuple<int, int> NetScanner::MakeSegment(stream_buffer &buffer, int port) {
+  NetScanner::SrcSeq NetScanner::MakeSegment(stream_buffer &buffer, uint16_t port) {
     if (protocol_.family() == AF_INET) return MakeIPv4Segment(buffer, port);
     return MakeIPv6Segment(buffer, port);
   }
@@ -152,7 +153,7 @@ namespace network {
    * @param port The destination port for the TCP header.
    * @return A tuple of two integers representing the source and destination addresses.
    */
-  std::tuple<int, int> NetScanner::MakeIPv4Segment(stream_buffer &buffer, int port) {
+  NetScanner::SrcSeq NetScanner::MakeIPv4Segment(stream_buffer &buffer, uint16_t port) {
     buffer.consume(buffer.size());
 
 
@@ -161,7 +162,7 @@ namespace network {
     utils::IPv4Header ipv4_header;
     auto daddr = destination_.address().to_v4();
     ipv4_header.Version(4);
-    ipv4_header.HeaderLength(ipv4_header.Length()/4);
+    ipv4_header.HeaderLength((ipv4_header.Length()/4) & 0xff);
     ipv4_header.TypeOfService(0x10);
     ipv4_header.FragmentOffset(IP_DF); // Fix: Include the necessary header file that defines the constant "IP_DF"
     ipv4_header.TTL(IPDEFTTL);
@@ -169,8 +170,9 @@ namespace network {
     ipv4_header.SourceAddress(utils::GetIPv4Address(route_table_ipv4_.Find(daddr)->name));
     ipv4_header.DestinationAddress(daddr);
 
-    uint16_t source = rand();
-    uint32_t sequence = rand();
+    thread_local static std::mt19937 rng(std::random_device{}());
+    uint16_t source = std::uniform_int_distribution<uint16_t>{}(rng);
+    uint32_t sequence = std::uniform_int_distribution<uint32_t>{}(rng);
     utils::TCPHeader tcp_header;
     tcp_header.Source(source);
     tcp_header.Destination(port);
@@ -178,17 +180,21 @@ namespace network {
     tcp_header.DataOffset(20/4);
     tcp_header.Syn(true);
     tcp_header.Window(utils::TCPHeader::default_window_value);
-    tcp_header.CalculateChecksum(ipv4_header.SourceAddress().to_ulong(), ipv4_header.DestinationAddress().to_ulong());
+    {
+        uint32_t s = static_cast<uint32_t>(ipv4_header.SourceAddress().to_ulong());
+        uint32_t d = static_cast<uint32_t>(ipv4_header.DestinationAddress().to_ulong());
+        tcp_header.CalculateChecksum(s, d);
+    }
 
-    ipv4_header.TotalLength(ipv4_header.Length() + tcp_header.length());
+    ipv4_header.TotalLength(static_cast<uint16_t>(ipv4_header.Length() + tcp_header.length()));
     ipv4_header.Checksum();
 
     if (!(stream << ipv4_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv4 segment. Aborting scan.");
-      return std::make_tuple(0, 0);
+      error_handler_.HandleError("Error creating IPv4 segment. Aborting scan.");
+      return {};
     }
 
-    return std::make_tuple(source, sequence);
+    return { source, sequence };
   }
 
   /**
@@ -198,7 +204,7 @@ namespace network {
    * @param port The port number to set in the TCP header of the segment.
    * @return A tuple containing the source and sequence numbers of the segment.
    */
-  std::tuple<int, int> NetScanner::MakeIPv6Segment(stream_buffer &buffer, int port) {
+  NetScanner::SrcSeq NetScanner::MakeIPv6Segment(stream_buffer &buffer, uint16_t port) {
     buffer.consume(buffer.size());
     std::ostream stream(&buffer);
 
@@ -209,8 +215,9 @@ namespace network {
     ipv6_header.SourceAddress(utils::GetIPv6Address(route_table_ipv6_.Find(daddr)->name));
     ipv6_header.DestinationAddress(daddr);
 
-    uint16_t source = rand();
-    uint32_t sequence = rand();
+    thread_local static std::mt19937 rng(std::random_device{}());
+    uint16_t source = std::uniform_int_distribution<uint16_t>{}(rng);
+    uint32_t sequence = std::uniform_int_distribution<uint32_t>{}(rng);
     utils::TCPHeader tcp_header;
     tcp_header.Source(source);
     tcp_header.Destination(port);
@@ -220,22 +227,22 @@ namespace network {
     tcp_header.Window(utils::TCPHeader::default_window_value);
 
     if (!(stream << ipv6_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv6 segment. Aborting scan.");
-      return std::make_tuple(0, 0);
+      error_handler_.HandleError("Error creating IPv6 segment. Aborting scan.");
+      return {};
     }
     
-    return std::make_tuple(source, sequence);
+    return { source, sequence };
   }
 
-  void NetScanner::PopulatePortInfo(int port, port_status status) {
+  void NetScanner::PopulatePortInfo(uint16_t port, port_status status) {
     if (port_info_.find(port) == port_info_.end()) {
       port_info_[port] = status;
     }
   }
 
-  void NetScanner::HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
+  void NetScanner::HandleScan(error_code error, [[maybe_unused]] size_t len, ScanInfo scan_info, [[maybe_unused]] shared_buffer buffer) {
     if (error) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
     } else {
       shared_timer timer = std::make_shared<basic_timer>(io_context_);
       StartTimer(timeout_miliseconds_, scan_info, timer);

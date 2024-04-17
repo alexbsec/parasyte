@@ -1,0 +1,8 @@
+/build/
+/.direnv/
+/.envrc
+/.ycm_extra_conf.py
+compile_commands.json
+*.sw?
+flake.lock
+Session.vim
