@@ -52,13 +52,17 @@ namespace network {
     //   The callback function that will be called when the send operation completes.
     //   It takes two parameters: error, which indicates if an error occurred during the send operation, and len, which represents the number of bytes sent.
     //   The callback function calls the HandleScan() function to handle the scan results.
+    // socket_.async_send_to(
+    //   buffer->data(),
+    //   destination_,
+    //   [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
+    //   (const boost::system::error_code& error, std::size_t len) {
+    //     this->HandleScan(error, len, scan_info, buffer); 
+    //   }
+    // );
     socket_.async_send_to(
-      buffer->data(),
-      destination_,
-      [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
-      (const boost::system::error_code& error, std::size_t len) {
-        this->HandleScan(error, len, scan_info, buffer); 
-      }
+      buffer->data(), destination_,
+      std::bind(&NetScanner::HandleScan, this, _1, _2, NetScanner::ScanInfo{port_number, send_time}, buffer)
     );
   }
 
@@ -84,7 +88,7 @@ namespace network {
       }
       return;
     } else if (error) { // Checks if an error occurred during the receive operation.
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
       PopulatePortInfo(scan_info.port, port_status::ABORTED);
     } else { // Processes the received data.
       buffer->commit(len);
@@ -120,7 +124,7 @@ namespace network {
     if (error == boost::asio::error::operation_aborted) {
       return;
     } else if (error) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
     } else {
       timeout_port_.insert(scan_info.port);
       socket_.cancel();
@@ -184,7 +188,7 @@ namespace network {
     ipv4_header.Checksum();
 
     if (!(stream << ipv4_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv4 segment. Aborting scan.");
+      error_handler_.HandleError("Error creating IPv4 segment. Aborting scan.");
       return std::make_tuple(0, 0);
     }
 
@@ -220,7 +224,7 @@ namespace network {
     tcp_header.Window(utils::TCPHeader::default_window_value);
 
     if (!(stream << ipv6_header << tcp_header)) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)("Error creating IPv6 segment. Aborting scan.");
+      error_handler_.HandleError("Error creating IPv6 segment. Aborting scan.");
       return std::make_tuple(0, 0);
     }
     
@@ -235,9 +239,10 @@ namespace network {
 
   void NetScanner::HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
     if (error) {
-      (error_handler_.*&error_handler::ErrorHandler::HandleError)(error.message());
+      error_handler_.HandleError(error.message());
     } else {
       shared_timer timer = std::make_shared<basic_timer>(io_context_);
+      std::cout << "Starting timer.." << std::endl;
       StartTimer(timeout_miliseconds_, scan_info, timer);
       StartReceive(scan_info, timer);
     }
@@ -254,6 +259,10 @@ namespace network {
   void NetScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
     timer->expires_from_now(std::chrono::milliseconds(milliseconds));
     timer->async_wait(std::bind(&NetScanner::Timeout, this, _1, scan_info, timer));
+  }
+
+  std::map<int, parasyte::network::NetScanner::port_status> const &NetScanner::PortInfo() const {
+    return port_info_;
   }
 }
 }
