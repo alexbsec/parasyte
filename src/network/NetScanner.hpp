@@ -69,7 +69,7 @@ namespace network {
       ~NetScanner();
 
       void StartScan(int port_number);
-      std::map<int, port_status> const &port_info() const;
+      std::map<int, port_status> const &PortInfo() const;
 
     private:
       void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
