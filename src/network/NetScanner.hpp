@@ -40,19 +40,17 @@
 namespace parasyte {
 namespace network {
   class NetScanner {
+    using error_code = boost::system::error_code;
     using stream_buffer = boost::asio::streambuf;
     using basic_timer = boost::asio::basic_waitable_timer<std::chrono::steady_clock>;
     using shared_timer = std::shared_ptr<basic_timer>;
     using shared_buffer = std::shared_ptr<stream_buffer>;
 
     struct ScanInfo {
-      int port;
+      uint16_t port;
       std::chrono::steady_clock::time_point send_time;
-      int sequence_number = 0;
-      int own_port = 0;
-
-      ScanInfo(int p, std::chrono::steady_clock::time_point t)
-        : port(p), send_time(t) {}
+      int sequence_number;
+      int own_port;
     };
 
     public:
@@ -72,25 +70,27 @@ namespace network {
       ~NetScanner();
 
       void StartScan(int port_number);
-      std::map<int, port_status> const &PortInfo() const;
+      std::map<int, port_status> const &port_info() const;
 
     private:
       void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
       void StartReceive(ScanInfo scan_info, shared_timer timer);
-      void HandleScan(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer);
-      void HandleReceive(const boost::system::error_code &error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
-      void Timeout(const boost::system::error_code &error, ScanInfo scan_info, shared_timer timer);
-      std::tuple<int, int> MakeSegment(stream_buffer &buffer, int port);
-      std::tuple<int, int> MakeIPv4Segment(stream_buffer &buffer, int port);
-      std::tuple<int, int> MakeIPv6Segment(stream_buffer &buffer, int port);
-      void PopulatePortInfo(int port, port_status status);
+      void HandleScan(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer);
+      void HandleReceive(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
+      void Timeout(error_code error, ScanInfo scan_info, shared_timer timer);
+      using SrcSeq = std::tuple<uint16_t, uint32_t>;
+      SrcSeq MakeSegment(stream_buffer &buffer, uint16_t port);
+      SrcSeq MakeIPv4Segment(stream_buffer &buffer, uint16_t port);
+      SrcSeq MakeIPv6Segment(stream_buffer &buffer, uint16_t port);
+      void PopulatePortInfo(uint16_t port, port_status status);
 
       int timeout_miliseconds_;
-      std::set<int> timeout_port_;
+      std::set<uint16_t> timeout_port_;
       boost::asio::io_context &io_context_;
       parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
       parasyte::network::utils::RawProtocol::endpoint destination_;
+      parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       std::map<int, port_status> port_info_;
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_; 
