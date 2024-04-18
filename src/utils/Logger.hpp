@@ -26,6 +26,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "../error_handler/ErrorHandler.hpp"
 
 /* CODE START */
 
@@ -65,11 +66,13 @@ namespace utils {
             case LogLevel::NIL:
               return "[NIL] ";
             case LogLevel::ERROR:
-              return "[x] ";
+              return "[ERROR] ";
             case LogLevel::WARNING:
-              return "[!] ";
+              return "[WARNING] ";
             case LogLevel::INFO:
-              return "[*] ";
+              return "[INFO] ";
+            default:
+              return "";
           }
         }
     };
