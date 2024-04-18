@@ -71,11 +71,11 @@ namespace utils {
      */
     void Logger::MakeLogDirectory(const std::string& filename, const std::filesystem::path& base_path) {
       std::filesystem::path log_dir = base_path / "logs";
+      log_full_path_ = log_dir / filename;
 
       try {
         if (!std::filesystem::exists(log_dir)) {
           std::filesystem::create_directories(log_dir);
-          log_full_path_ = log_dir / filename;
         }
       }
       catch (const std::filesystem::filesystem_error& e) {
