@@ -16,7 +16,7 @@ using std::placeholders::_2;
 
 namespace parasyte {
 namespace network {
-  NetScanner::NetScanner(
+  RawScanner::RawScanner(
     boost::asio::io_context& io_context,
     const std::string& host,
     utils::RawProtocol::basic_raw_socket::protocol_type protocol,
@@ -35,7 +35,7 @@ namespace network {
     }
   }
 
-  NetScanner::~NetScanner() {
+  RawScanner::~RawScanner() {
     socket_.close();
   }
 
@@ -48,7 +48,7 @@ namespace network {
    *
    * @param port_number The port number to scan.
    */
-  void NetScanner::StartScan(uint16_t port_number) {
+  void RawScanner::StartScan(uint16_t port_number) {
     auto buffer = std::make_shared<stream_buffer>();
     MakeSegment(*buffer, port_number);
     auto send_time = std::chrono::steady_clock::now();
@@ -56,7 +56,7 @@ namespace network {
     // The function async_send_to() takes the following parameters:
     // - buffer->data(): A pointer to the data in the buffer that needs to be sent.
     // - destination_: The destination endpoint to which the data will be sent.
-    // - [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]
+    // - [this, buffer, scan_info = RawScanner::ScanInfo{port_number, send_time}]
     //   A lambda function that will be called when the send operation completes.
     //   It captures the current object instance (this), the buffer, and creates a scan_info object with the port_number and
     //   send_time.
@@ -67,7 +67,7 @@ namespace network {
     socket_.async_send_to(
       buffer->data(),
       destination_,
-      [this, buffer, scan_info = NetScanner::ScanInfo{port_number, send_time}]  //
+      [this, buffer, scan_info = RawScanner::ScanInfo{port_number, send_time}]  //
       (const boost::system::error_code& error, std::size_t len) {
         this->HandleScan(error, len, scan_info, buffer);
       }
@@ -79,7 +79,7 @@ namespace network {
    *
    * @return A constant reference to the port_info_ map.
    */
-  std::map<int, NetScanner::port_status> const& NetScanner::port_info() const {
+  std::map<int, RawScanner::port_status> const& RawScanner::port_info() const {
     return port_info_;
   }
 
@@ -90,31 +90,31 @@ namespace network {
    * @param scan_info The scan information to be passed to the timeout handler.
    * @param timer The shared pointer to the timer object.
    */
-  void NetScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
+  void RawScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
     timer->expires_from_now(std::chrono::milliseconds(milliseconds));
-    timer->async_wait(std::bind(&NetScanner::Timeout, this, _1, scan_info, timer));
+    timer->async_wait(std::bind(&RawScanner::Timeout, this, _1, scan_info, timer));
   }
 
   /**
-   * @brief Starts the asynchronous receive operation for the NetScanner.
+   * @brief Starts the asynchronous receive operation for the RawScanner.
    *
    * This function initiates the asynchronous receive operation on the socket
-   * associated with the NetScanner. It prepares a buffer to receive data and
+   * associated with the RawScanner. It prepares a buffer to receive data and
    * calls the HandleReceive function when data is received.
    *
    * @param scan_info The ScanInfo object containing scan information.
    * @param timer The shared_timer object used for timing the receive operation.
    */
-  void NetScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
+  void RawScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
     auto&& buffer = std::make_shared<stream_buffer>();
     socket_.async_receive(
       buffer->prepare(buffer_size),  //
-      std::bind(&NetScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
+      std::bind(&RawScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
     );
   }
 
   /**
-   * @brief Handles the receive operation for the NetScanner class.
+   * @brief Handles the receive operation for the RawScanner class.
    *
    * This function is called when a receive operation completes. It processes the received data,
    * updates the port status information, and handles any errors that occur during the operation.
@@ -125,7 +125,7 @@ namespace network {
    * @param buffer The shared buffer containing the received data.
    * @param timer The shared timer used for timeout handling.
    */
-  void NetScanner::HandleReceive(error_code error, size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
+  void RawScanner::HandleReceive(error_code error, size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
     // Checks if the receive operation was aborted due to a timeout.
     if (error == boost::asio::error::operation_aborted) {
       if (timeout_port_.find(scan_info.port) == timeout_port_.end()) {
@@ -166,7 +166,7 @@ namespace network {
    * @param scan_info The information about the scan.
    * @param buffer The shared buffer containing the received data.
    */
-  void NetScanner::HandleScan(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
+  void RawScanner::HandleScan(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer) {
     if (error) {
       error_handler_.HandleError(error.message());
     } else {
@@ -189,7 +189,7 @@ namespace network {
    * @param scan_info The information about the scan that timed out.
    * @param timer The shared timer object used for the scan.
    */
-  void NetScanner::Timeout(error_code error, ScanInfo scan_info, [[maybe_unused]] shared_timer timer) {
+  void RawScanner::Timeout(error_code error, ScanInfo scan_info, [[maybe_unused]] shared_timer timer) {
     if (error == boost::asio::error::operation_aborted) {
       return;
     } else if (error) {
@@ -211,7 +211,7 @@ namespace network {
    * @param port The port number to include in the segment.
    * @return A tuple of two integers representing the segment.
    */
-  NetScanner::SrcSeq NetScanner::MakeSegment(stream_buffer& buffer, uint16_t port) {
+  RawScanner::SrcSeq RawScanner::MakeSegment(stream_buffer& buffer, uint16_t port) {
     if (protocol_.family() == AF_INET)  //
       return MakeIPv4Segment(buffer, port);
     return MakeIPv6Segment(buffer, port);
@@ -227,7 +227,7 @@ namespace network {
    * @param port The destination port for the TCP header.
    * @return A tuple of two integers representing the source and destination addresses.
    */
-  NetScanner::SrcSeq NetScanner::MakeIPv4Segment(stream_buffer& buffer, uint16_t port) {
+  RawScanner::SrcSeq RawScanner::MakeIPv4Segment(stream_buffer& buffer, uint16_t port) {
     buffer.consume(buffer.size());
     std::ostream stream(&buffer);
     utils::IPv4Header ipv4_header;
@@ -275,7 +275,7 @@ namespace network {
    * @param port The port number to set in the TCP header of the segment.
    * @return A tuple containing the source and sequence numbers of the segment.
    */
-  NetScanner::SrcSeq NetScanner::MakeIPv6Segment(stream_buffer& buffer, uint16_t port) {
+  RawScanner::SrcSeq RawScanner::MakeIPv6Segment(stream_buffer& buffer, uint16_t port) {
     buffer.consume(buffer.size());
     std::ostream stream(&buffer);
 
@@ -313,7 +313,7 @@ namespace network {
    * @param port The port number.
    * @param status The status of the port.
    */
-  void NetScanner::PopulatePortInfo(int port, port_status status) {
+  void RawScanner::PopulatePortInfo(int port, port_status status) {
     if (port_info_.find(port) == port_info_.end()) {
       port_info_[port] = status;
     }
