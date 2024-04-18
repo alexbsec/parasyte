@@ -8,6 +8,7 @@
 #include <ostream>
 #include <random>
 #include "../error_handler/ErrorHandler.hpp"
+#include "../utils/Logger.hpp"
 #include "NetUtils.hpp"
 
 // Placeholders to later use in std::bind
@@ -95,6 +96,7 @@ namespace network {
     auto buffer = std::make_shared<stream_buffer>();
     MakeSegment(*buffer, port_number);
     auto send_time = std::chrono::steady_clock::now();
+    logger_.Log(LogLevel::INFO, "Scanning port " + std::to_string(port_number));
     // Asynchronously sends the data in the buffer to the destination using the socket.
     // The function async_send_to() takes the following parameters:
     // - buffer->data(): A pointer to the data in the buffer that needs to be sent.
@@ -112,6 +114,13 @@ namespace network {
       destination_,
       [this, buffer, scan_info = RawScanner::ScanInfo{port_number, send_time}]  //
       (const boost::system::error_code& error, std::size_t len) {
+        logger_.Log(
+          LogLevel::INFO,
+          "Sent bytes from port " + std::to_string(scan_info.own_port) + " with length " + std::to_string(len) + " bytes."
+        );
+        if (len == 0) {
+          logger_.Log(LogLevel::WARNING, "Failed to send bytes from " + std::to_string(scan_info.own_port));
+        }
         this->HandleScan(error, len, scan_info, buffer);
       }
     );
@@ -134,6 +143,7 @@ namespace network {
    * @param timer The shared pointer to the timer object.
    */
   void RawScanner::StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer) {
+    logger_.Log(LogLevel::INFO, "Starting timer for port " + std::to_string(scan_info.port));
     timer->expires_from_now(std::chrono::milliseconds(milliseconds));
     timer->async_wait(std::bind(&RawScanner::Timeout, this, _1, scan_info, timer));
   }
@@ -150,6 +160,7 @@ namespace network {
    */
   void RawScanner::StartReceive(ScanInfo scan_info, shared_timer timer) {
     auto&& buffer = std::make_shared<stream_buffer>();
+    logger_.Log(LogLevel::INFO, "Receiving data for port " + std::to_string(scan_info.port));
     socket_.async_receive(
       buffer->prepare(buffer_size),  //
       std::bind(&RawScanner::HandleReceive, this, _1, _2, scan_info, buffer, timer)
@@ -171,25 +182,34 @@ namespace network {
   void RawScanner::HandleReceive(error_code error, size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
     // Checks if the receive operation was aborted due to a timeout.
     if (error == boost::asio::error::operation_aborted) {
+      logger_.Log(LogLevel::WARNING, "Receive timed out for port " + std::to_string(scan_info.port));
       if (timeout_port_.find(scan_info.port) == timeout_port_.end()) {
         StartReceive(scan_info, timer);
       } else {
+        logger_.Log(LogLevel::WARNING, "Port " + std::to_string(scan_info.port) + " timed out.");
         PopulatePortInfo(scan_info.port, port_status::FILTERED);
       }
       return;
     } else if (error) {  // Checks if an error occurred during the receive operation.
       error_handler_.HandleError(error.message());
+      logger_.Log(LogLevel::ERROR, "Error receiving data for port " + std::to_string(scan_info.port));
       PopulatePortInfo(scan_info.port, port_status::ABORTED);
     } else {  // Processes the received data.
+      logger_.Log(LogLevel::INFO, "Received data for port " + std::to_string(scan_info.port));
       buffer->commit(len);
       utils::TCPHeader header;
       std::istream stream(&(*buffer));
       stream >> header;
       if (header.Syn() && header.Ack()) {
+        logger_.Log(LogLevel::INFO, "Port " + std::to_string(scan_info.port) + " is open.");
         port_info_[header.Source()] = port_status::OPEN;
       } else if (header.Rst() && header.Ack()) {
+        logger_.Log(LogLevel::INFO, "Port " + std::to_string(scan_info.port) + " is closed.");
         port_info_[header.Source()] = port_status::CLOSED;
       } else {
+        logger_.Log(
+          LogLevel::INFO, "Port " + std::to_string(scan_info.port) + " status cannot be determined. Starting receive again."
+        );
         StartReceive(scan_info, timer);
         return;
       }
@@ -365,9 +385,14 @@ namespace network {
   TCPScanner::TCPScanner(boost::asio::io_context& io_context, const std::string& host, int timeout_milliseconds)
       : io_context_(io_context)
       , host_(host)
-      , timeout_milliseconds_(timeout_milliseconds) {}
+      , timeout_milliseconds_(timeout_milliseconds)
+      , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {
+    // TODO: Implement constructor
+  }
 
-  TCPScanner::~TCPScanner() {}
+  TCPScanner::~TCPScanner() {
+    // TODO: Implement destructor
+  }
 
   void TCPScanner::StartScan(uint16_t port_number) {
     auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
