@@ -28,6 +28,7 @@
 #include <tuple>
 
 #include <boost/asio/basic_raw_socket.hpp>
+#include <boost/asio/basic_socket.hpp>
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/streambuf.hpp>
@@ -52,7 +53,7 @@ namespace network {
       ScannerType scanner_type;
   };
 
-  class NetScanner {
+  class Scanner {
     public:
       using error_code = boost::system::error_code;
       using stream_buffer = boost::asio::streambuf;
@@ -79,11 +80,32 @@ namespace network {
         buffer_size = 2048,
       };
 
-      NetScanner(boost::asio::io_context& io_context, ScannerParams const& params);
-      ~NetScanner();
+      virtual ~Scanner() = default;
+      virtual void StartScan(uint16_t port_number) = 0;
+      std::map<int, port_status> const& port_info() const {
+        return port_info_;
+      };
+
+    protected:
+      std::map<int, port_status> port_info_;
   };
 
-  class RawScanner : public NetScanner {
+  class NetScanner {
+    public:
+      NetScanner(boost::asio::io_context& io_context, ScannerParams const& params);
+      ~NetScanner();
+
+      void SwapScannerType(ScannerParams const& params);
+      void StartScan(uint16_t port_number);
+      std::unique_ptr<Scanner> scanner;
+
+    private:
+      boost::asio::io_context& io_context_;
+
+      parasyte::error_handler::ErrorHandler error_handler_;
+  };
+
+  class RawScanner : public Scanner {
     public:
       RawScanner(
         boost::asio::io_context& io_context,
@@ -93,7 +115,7 @@ namespace network {
       );
       ~RawScanner();
 
-      void StartScan(uint16_t port_number);
+      void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const;
 
     private:
@@ -120,13 +142,20 @@ namespace network {
       parasyte::error_handler::ErrorHandler error_handler_;
   };
 
-  // class TCPScanner : public NetScanner {
-  //   public:
-  //     TCPScanner(boost::asio::io_context& io_context, const std::string& host, int miliseconds);
-  //     ~TCPScanner();
+  class TCPScanner : public Scanner {
+    public:
+      TCPScanner(boost::asio::io_context& io_context, const std::string& host, int miliseconds);
+      ~TCPScanner();
 
-  //     void StartScan(uint16_t port_number);
-  // };
+      void StartScan(uint16_t port_number);
+      std::map<int, port_status> const& port_info() const;
+
+    private:
+      int timeout_milliseconds_;
+      std::map<int, port_status> port_info_;
+      boost::asio::io_context& io_context_;
+      std::string host_;
+  };
 }
 }
 

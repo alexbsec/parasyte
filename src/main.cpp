@@ -8,13 +8,14 @@ int main() {
     std::string host = "127.0.0.1";
     parasyte::network::utils::RawProtocol protocol = parasyte::network::utils::RawProtocol::v4();
     int timeout = 10000;
-    parasyte::network::NetScanner scanner(io_context, host, protocol, timeout);
+    parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::RAW};
+    parasyte::network::NetScanner net_scanner(io_context, params);
     uint16_t port_to_scan = 5555;
-    scanner.StartScan(port_to_scan);
+    net_scanner.StartScan(port_to_scan);
     io_context.run();
     std::cout << "PORT\tSTATUS\n";
-    for (auto pair : scanner.port_info()) {
-      using pstate = parasyte::network::NetScanner::port_status;
+    for (auto pair : net_scanner.scanner->port_info()) {
+      using pstate = parasyte::network::Scanner::port_status;
       static std::map<pstate, std::string> const pstr = {
         {pstate::OPEN, "open"},
         {pstate::CLOSED, "closed"},

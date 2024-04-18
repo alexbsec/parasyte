@@ -35,6 +35,7 @@
 #include <boost/asio/ip/basic_resolver.hpp>
 #include <boost/asio/ip/basic_resolver_iterator.hpp>
 #include <boost/asio/ip/basic_resolver_query.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <cstdint>
 #include <fstream>
 #include <string>

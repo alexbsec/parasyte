@@ -1,13 +1,13 @@
+#include "NetScanner.hpp"
 #include <netinet/ip.h>
+#include <boost/asio/ip/tcp.hpp>
 #include <chrono>
 #include <functional>
 #include <iostream>
 #include <istream>
 #include <ostream>
 #include <random>
-
 #include "../error_handler/ErrorHandler.hpp"
-#include "NetScanner.hpp"
 #include "NetUtils.hpp"
 
 // Placeholders to later use in std::bind
@@ -16,6 +16,49 @@ using std::placeholders::_2;
 
 namespace parasyte {
 namespace network {
+  NetScanner::NetScanner(boost::asio::io_context& io_context, ScannerParams const& params)
+      : io_context_(io_context)
+      , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+    switch (params.scanner_type) {
+      case ScannerType::RAW:
+        scanner = std::make_unique<RawScanner>(io_context, params.host, params.protocol, params.timeout);
+        break;
+      case ScannerType::TCP:
+        scanner = std::make_unique<TCPScanner>(io_context, params.host, params.timeout);
+        break;
+    }
+
+    if (scanner == nullptr) {
+      error_handler_.HandleError("No scanner type specified. Aborting scan.");
+      return;
+    }
+  }
+
+  NetScanner::~NetScanner(){};
+
+  /**
+   * @brief Swaps the scanner type based on the provided parameters.
+   *
+   * This function creates a new scanner object based on the scanner type specified in the `params` parameter.
+   * The created scanner object is then assigned to the `scanner_` member variable.
+   *
+   * @param params The parameters containing the scanner type, host, protocol, and timeout.
+   */
+  void NetScanner::SwapScannerType(ScannerParams const& params) {
+    switch (params.scanner_type) {
+      case ScannerType::RAW:
+        scanner = std::make_unique<RawScanner>(io_context_, params.host, params.protocol, params.timeout);
+        break;
+      case ScannerType::TCP:
+        scanner = std::make_unique<TCPScanner>(io_context_, params.host, params.timeout);
+        break;
+    }
+  }
+
+  void NetScanner::StartScan(uint16_t port_number) {
+    scanner->StartScan(port_number);
+  }
+
   RawScanner::RawScanner(
     boost::asio::io_context& io_context,
     const std::string& host,
@@ -79,7 +122,7 @@ namespace network {
    *
    * @return A constant reference to the port_info_ map.
    */
-  std::map<int, RawScanner::port_status> const& RawScanner::port_info() const {
+  std::map<int, Scanner::port_status> const& RawScanner::port_info() const {
     return port_info_;
   }
 
@@ -319,5 +362,30 @@ namespace network {
     }
   }
 
+  TCPScanner::TCPScanner(boost::asio::io_context& io_context, const std::string& host, int timeout_milliseconds)
+      : io_context_(io_context)
+      , host_(host)
+      , timeout_milliseconds_(timeout_milliseconds) {}
+
+  TCPScanner::~TCPScanner() {}
+
+  void TCPScanner::StartScan(uint16_t port_number) {
+    auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
+    socket->open(boost::asio::ip::tcp::v4());
+    socket->async_connect(
+      boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(host_), port_number),
+      [this, socket, port_number](const error_code& error) {
+        if (!error) {
+          port_info_[port_number] = port_status::OPEN;
+        } else {
+          port_info_[port_number] = port_status::CLOSED;
+        }
+      }
+    );
+  }
+
+  std::map<int, Scanner::port_status> const& TCPScanner::port_info() const {
+    return port_info_;
+  }
 }
 }
