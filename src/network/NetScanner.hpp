@@ -39,12 +39,33 @@
 
 namespace parasyte {
 namespace network {
+
+  enum class ScannerType {
+    RAW,
+    TCP,
+  };
+
+  struct ScannerParams {
+      std::string host;
+      parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol;
+      int timeout;
+      ScannerType scanner_type;
+  };
+
   class NetScanner {
+    public:
       using error_code = boost::system::error_code;
       using stream_buffer = boost::asio::streambuf;
       using basic_timer = boost::asio::basic_waitable_timer<std::chrono::steady_clock>;
       using shared_timer = std::shared_ptr<basic_timer>;
       using shared_buffer = std::shared_ptr<stream_buffer>;
+
+      enum port_status {
+        OPEN,
+        CLOSED,
+        FILTERED,
+        ABORTED,
+      };
 
       struct ScanInfo {
           uint16_t port;
@@ -53,26 +74,24 @@ namespace network {
           uint16_t own_port = 0;
       };
 
-    public:
-      enum port_status {
-        OPEN,
-        CLOSED,
-        FILTERED,
-        ABORTED,
-      };
-
       enum {
         default_timeout = 4000,
         buffer_size = 2048,
       };
 
-      NetScanner(
+      NetScanner(boost::asio::io_context& io_context, ScannerParams const& params);
+      ~NetScanner();
+  };
+
+  class RawScanner : public NetScanner {
+    public:
+      RawScanner(
         boost::asio::io_context& io_context,
         const std::string& host,
         parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol,
         int miliseconds
       );
-      ~NetScanner();
+      ~RawScanner();
 
       void StartScan(uint16_t port_number);
       std::map<int, port_status> const& port_info() const;
@@ -100,6 +119,14 @@ namespace network {
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_;
       parasyte::error_handler::ErrorHandler error_handler_;
   };
+
+  // class TCPScanner : public NetScanner {
+  //   public:
+  //     TCPScanner(boost::asio::io_context& io_context, const std::string& host, int miliseconds);
+  //     ~TCPScanner();
+
+  //     void StartScan(uint16_t port_number);
+  // };
 }
 }
 
