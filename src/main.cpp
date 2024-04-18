@@ -14,6 +14,7 @@ int main() {
     net_scanner.StartScan(port_to_scan);
     io_context.run();
     std::cout << "PORT\tSTATUS\n";
+    auto const &info = net_scanner.scanner->port_info();
     for (auto pair : net_scanner.scanner->port_info()) {
       using pstate = parasyte::network::Scanner::port_status;
       static std::map<pstate, std::string> const pstr = {
@@ -25,7 +26,7 @@ int main() {
       std::cout << pair.first << '\t' << pstr.at(pair.second) << "\n";
     }
   }
-  catch (const std::exception& e) {
+  catch (const std::exception &e) {
     std::cerr << "Exception: " << e.what() << "\n";
   }
   return 0;
