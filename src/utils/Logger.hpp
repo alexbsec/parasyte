@@ -58,6 +58,7 @@ namespace utils {
       private:
         std::ofstream log_file_;  // File stream for logging
         unsigned int verbosity_;  // Verbosity level
+        std::filesystem::path log_full_path_;
         parasyte::error_handler::ErrorHandler error_handler_;
         std::string LevelToString_(LogLevel level) {
           switch (level) {

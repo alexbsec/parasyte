@@ -27,9 +27,14 @@ namespace utils {
         : verbosity_(verbosity)
         , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {
       MakeLogDirectory(filename);
-      log_file_.open(filename, std::ios::app);
-      if (!log_file_.is_open()) {
-        error_handler_.HandleError("Failed to open log file");
+      try {
+        log_file_.open(log_full_path_, std::ios::app);
+        if (!log_file_.is_open()) {
+          error_handler_.HandleError("Failed to open log file");
+        }
+      }
+      catch (const std::filesystem::filesystem_error& e) {
+        error_handler_.HandleError(e.what());
       }
     }
 
@@ -70,7 +75,7 @@ namespace utils {
       try {
         if (!std::filesystem::exists(log_dir)) {
           std::filesystem::create_directories(log_dir);
-          log_file_ = std::ofstream(log_dir / filename);
+          log_full_path_ = log_dir / filename;
         }
       }
       catch (const std::filesystem::filesystem_error& e) {
