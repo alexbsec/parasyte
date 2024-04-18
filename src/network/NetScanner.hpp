@@ -34,6 +34,7 @@
 #include <boost/asio/streambuf.hpp>
 
 #include "../error_handler/ErrorHandler.hpp"
+#include "../utils/Logger.hpp"
 #include "NetUtils.hpp"
 
 /* CODE START */
@@ -60,6 +61,7 @@ namespace network {
       using basic_timer = boost::asio::basic_waitable_timer<std::chrono::steady_clock>;
       using shared_timer = std::shared_ptr<basic_timer>;
       using shared_buffer = std::shared_ptr<stream_buffer>;
+      using LogLevel = parasyte::utils::logging::LogLevel;
 
       enum port_status {
         OPEN,
@@ -101,7 +103,7 @@ namespace network {
 
     private:
       boost::asio::io_context& io_context_;
-
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
       parasyte::error_handler::ErrorHandler error_handler_;
   };
 
@@ -140,6 +142,7 @@ namespace network {
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_;
       parasyte::error_handler::ErrorHandler error_handler_;
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
   };
 
   class TCPScanner : public Scanner {
@@ -155,6 +158,8 @@ namespace network {
       std::map<int, port_status> port_info_;
       boost::asio::io_context& io_context_;
       std::string host_;
+      parasyte::error_handler::ErrorHandler error_handler_;
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
   };
 }
 }
