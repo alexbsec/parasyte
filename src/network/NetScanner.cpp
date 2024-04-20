@@ -20,12 +20,15 @@ namespace network {
   NetScanner::NetScanner(boost::asio::io_context& io_context, ScannerParams const& params)
       : io_context_(io_context)
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+    std::string scanner_name;
     switch (params.scanner_type) {
       case ScannerType::RAW:
         scanner = std::make_unique<RawScanner>(io_context, params.host, params.protocol, params.timeout);
+        scanner_name = "RawScanner";
         break;
       case ScannerType::TCP:
         scanner = std::make_unique<TCPScanner>(io_context, params.host, params.timeout);
+        scanner_name = "TCPScanner";
         break;
     }
 
@@ -54,10 +57,6 @@ namespace network {
         scanner = std::make_unique<TCPScanner>(io_context_, params.host, params.timeout);
         break;
     }
-  }
-
-  void NetScanner::StartScan(uint16_t port_number) {
-    scanner->StartScan(port_number);
   }
 
   RawScanner::RawScanner(
@@ -182,14 +181,13 @@ namespace network {
   void RawScanner::HandleReceive(error_code error, size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer) {
     // Checks if the receive operation was aborted due to a timeout.
     if (error == boost::asio::error::operation_aborted) {
-      logger_.Log(LogLevel::WARNING, "Receive timed out for port " + std::to_string(scan_info.port));
       if (timeout_port_.find(scan_info.port) == timeout_port_.end()) {
         StartReceive(scan_info, timer);
       } else {
         logger_.Log(LogLevel::WARNING, "Port " + std::to_string(scan_info.port) + " timed out.");
+        logger_.Log(LogLevel::INFO, "Marking port as FILTERED for port " + std::to_string(scan_info.port));
         PopulatePortInfo(scan_info.port, port_status::FILTERED);
       }
-      return;
     } else if (error) {  // Checks if an error occurred during the receive operation.
       error_handler_.HandleError(error.message());
       logger_.Log(LogLevel::ERROR, "Error receiving data for port " + std::to_string(scan_info.port));
@@ -211,7 +209,6 @@ namespace network {
           LogLevel::INFO, "Port " + std::to_string(scan_info.port) + " status cannot be determined. Starting receive again."
         );
         StartReceive(scan_info, timer);
-        return;
       }
     }
     timer->cancel();
@@ -377,9 +374,7 @@ namespace network {
    * @param status The status of the port.
    */
   void RawScanner::PopulatePortInfo(int port, port_status status) {
-    if (port_info_.find(port) == port_info_.end()) {
-      port_info_[port] = status;
-    }
+    port_info_[port] = status;
   }
 
   TCPScanner::TCPScanner(boost::asio::io_context& io_context, const std::string& host, int timeout_milliseconds)

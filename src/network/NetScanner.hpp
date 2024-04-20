@@ -84,7 +84,7 @@ namespace network {
 
       virtual ~Scanner() = default;
       virtual void StartScan(uint16_t port_number) = 0;
-      std::map<int, port_status> const& port_info() const {
+      virtual std::map<int, port_status> const& port_info() const {
         return port_info_;
       };
 
@@ -118,7 +118,7 @@ namespace network {
       ~RawScanner();
 
       void StartScan(uint16_t port_number) override;
-      std::map<int, port_status> const& port_info() const;
+      std::map<int, port_status> const& port_info() const override;
 
     private:
       void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
@@ -131,6 +131,7 @@ namespace network {
       SrcSeq MakeIPv4Segment(stream_buffer& buffer, uint16_t port);
       SrcSeq MakeIPv6Segment(stream_buffer& buffer, uint16_t port);
       void PopulatePortInfo(int port, port_status status);
+      std::map<int, port_status> port_info_;
 
       int timeout_miliseconds_;
       std::set<uint16_t> timeout_port_;
@@ -138,7 +139,7 @@ namespace network {
       parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
       parasyte::network::utils::RawProtocol::endpoint destination_;
-      std::map<int, port_status> port_info_;
+
       parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
       parasyte::network::utils::RouteTableIPv6 route_table_ipv6_;
       parasyte::error_handler::ErrorHandler error_handler_;
@@ -150,8 +151,8 @@ namespace network {
       TCPScanner(boost::asio::io_context& io_context, const std::string& host, int miliseconds);
       ~TCPScanner();
 
-      void StartScan(uint16_t port_number);
-      std::map<int, port_status> const& port_info() const;
+      void StartScan(uint16_t port_number) override;
+      std::map<int, port_status> const& port_info() const override;
 
     private:
       int timeout_milliseconds_;
