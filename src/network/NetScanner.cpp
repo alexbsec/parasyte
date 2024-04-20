@@ -20,15 +20,12 @@ namespace network {
   NetScanner::NetScanner(boost::asio::io_context& io_context, ScannerParams const& params)
       : io_context_(io_context)
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
-    std::string scanner_name;
     switch (params.scanner_type) {
       case ScannerType::RAW:
         scanner = std::make_unique<RawScanner>(io_context, params.host, params.protocol, params.timeout);
-        scanner_name = "RawScanner";
         break;
       case ScannerType::TCP:
         scanner = std::make_unique<TCPScanner>(io_context, params.host, params.timeout);
-        scanner_name = "TCPScanner";
         break;
     }
 
