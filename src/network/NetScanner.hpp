@@ -36,6 +36,7 @@
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
 #include "NetUtils.hpp"
+#include "Services.hpp"
 
 /* CODE START */
 
@@ -154,6 +155,8 @@ namespace network {
       void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const override;
 
+      void Connect(const boost::system::error_code& error, const uint16_t port);
+
     private:
       int timeout_milliseconds_;
       std::map<int, port_status> port_info_;
@@ -161,6 +164,7 @@ namespace network {
       std::string host_;
       parasyte::error_handler::ErrorHandler error_handler_;
       parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
+      parasyte::network::services::ServiceDetector service_detector_;
   };
 }
 }

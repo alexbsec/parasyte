@@ -10,6 +10,7 @@
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
 #include "NetUtils.hpp"
+#include "Services.hpp"
 
 // Placeholders to later use in std::bind
 using std::placeholders::_1;
@@ -70,6 +71,10 @@ namespace network {
     utils::RawProtocol::basic_resolver resolver(io_context);
     utils::RawProtocol::basic_resolver::query query(protocol, host, "", boost::asio::ip::resolver_query_base::numeric_service);
     destination_ = *resolver.resolve(query);
+
+    // Set IPHDRINCL option for the socket
+    boost::asio::socket_base::send_buffer_size option(true);
+    socket_.set_option(option);
     if (protocol.family() == AF_INET) {
       socket_.set_option(utils::BinaryOption<SOL_IP, IP_HDRINCL, true>(true));
     }
@@ -105,6 +110,7 @@ namespace network {
     //   The callback function that will be called when the send operation completes.
     //   It takes two parameters: error, which indicates if an error occurred during the send operation, and len, which
     //   represents the number of bytes sent. The callback function calls the HandleScan() function to handle the scan results.
+    auto&& sbuffer = std::make_shared<stream_buffer>();
     socket_.async_send_to(
       buffer->data(),
       destination_,
@@ -378,15 +384,15 @@ namespace network {
       : io_context_(io_context)
       , host_(host)
       , timeout_milliseconds_(timeout_milliseconds)
-      , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {
-    // TODO: Implement constructor
-  }
+      , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR)
+      , service_detector_(io_context, host, 0) {}
 
   TCPScanner::~TCPScanner() {
     // TODO: Implement destructor
   }
 
   void TCPScanner::StartScan(uint16_t port_number) {
+    service_detector_.SetPort(port_number);
     auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
     socket->open(boost::asio::ip::tcp::v4());
     socket->async_connect(
@@ -394,6 +400,7 @@ namespace network {
       [this, socket, port_number](const error_code& error) {
         if (!error) {
           port_info_[port_number] = port_status::OPEN;
+          service_detector_.DetectService();
         } else {
           port_info_[port_number] = port_status::CLOSED;
         }
@@ -404,5 +411,6 @@ namespace network {
   std::map<int, Scanner::port_status> const& TCPScanner::port_info() const {
     return port_info_;
   }
+
 }
 }
