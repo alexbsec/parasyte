@@ -22,6 +22,8 @@
 #include <boost/asio/basic_socket.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/streambuf.hpp>
+#include <map>
 
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
@@ -39,14 +41,23 @@ namespace network {
 
     class IServiceDetector {
       public:
+        struct resolver_results {
+            std::string host_name;
+            std::string service_name;
+            uint16_t port;
+            std::string protocol;
+        };
         virtual ~IServiceDetector() = default;
         virtual void DetectService() = 0;
+        virtual std::map<std::string, resolver_results> const& GetResolverResults() const;
+
     };
 
     class IVersionDetector {
       public:
         virtual ~IVersionDetector() = default;
         virtual void DetectVersion() = 0;
+        virtual void GrabBanner() = 0;
     };
 
     class ServiceDetector : public IServiceDetector {
@@ -56,29 +67,35 @@ namespace network {
 
         void DetectService() override;
 
+        void SetPort(uint16_t port) {
+          port_ = port;
+        }
+
+        std::map<std::string, resolver_results> const& GetResolverResults() const override;
+
       private:
         void ResolveHost();
         void OnResolveHost(const error_code& ec, tcp_resolver_results results);
         void OnConnect(const error_code& ec);
         boost::asio::io_context& io_context_;
         std::string host_;
+        tcp::resolver resolver_;
         uint16_t port_;
+        std::map<std::string, resolver_results> resolver_results_;
+        parasyte::error_handler::ErrorHandler error_handler_;
     };
 
     class VersionDetector : IVersionDetector {
       public:
-        VersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
+        VersionDetector(boost::asio::io_context& io_context, tcp::socket& socket);
         ~VersionDetector() override;
 
+        void GrabBanner() override;
         void DetectVersion() override;
 
       private:
-        void ResolveHost();
-        void OnResolveHost(const error_code& ec, tcp_resolver_results results);
-        void OnConnect(const error_code& ec);
         boost::asio::io_context& io_context_;
-        std::string host_;
-        uint16_t port_;
+        tcp::socket& tcp_socket_;
     };
 
     class FTPDetector : public ServiceDetector {
