@@ -88,6 +88,7 @@ namespace network {
       virtual std::map<int, port_status> const& port_info() const {
         return port_info_;
       };
+      virtual std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const = 0;
 
     protected:
       std::map<int, port_status> port_info_;
@@ -120,6 +121,7 @@ namespace network {
 
       void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const override;
+      std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
 
     private:
       void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
@@ -133,6 +135,8 @@ namespace network {
       SrcSeq MakeIPv6Segment(stream_buffer& buffer, uint16_t port);
       void PopulatePortInfo(int port, port_status status);
       std::map<int, port_status> port_info_;
+      services::ServiceDetector service_detector_;
+      std::map<std::string, services::IServiceDetector::resolver_results> resolver_results_;
 
       int timeout_miliseconds_;
       std::set<uint16_t> timeout_port_;
@@ -154,8 +158,7 @@ namespace network {
 
       void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const override;
-
-      void Connect(const boost::system::error_code& error, const uint16_t port);
+      std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
 
     private:
       int timeout_milliseconds_;
