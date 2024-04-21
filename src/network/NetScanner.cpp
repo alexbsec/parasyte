@@ -67,7 +67,8 @@ namespace network {
       , io_context_(io_context)
       , socket_(io_context.get_executor(), protocol)
       , protocol_(protocol)
-      , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+      , error_handler_(error_handler::ErrorHandler::error_type::ERROR)
+      , service_detector_(io_context, host, 0) {
     utils::RawProtocol::basic_resolver resolver(io_context);
     utils::RawProtocol::basic_resolver::query query(protocol, host, "", boost::asio::ip::resolver_query_base::numeric_service);
     destination_ = *resolver.resolve(query);
@@ -135,6 +136,10 @@ namespace network {
    */
   std::map<int, Scanner::port_status> const& RawScanner::port_info() const {
     return port_info_;
+  }
+
+  std::map<std::string, services::IServiceDetector::resolver_results> const& RawScanner::GetResolverResults() const {
+    return service_detector_.GetResolverResults();
   }
 
   /**
@@ -391,6 +396,16 @@ namespace network {
     // TODO: Implement destructor
   }
 
+  /**
+   * @brief Starts a scan on the specified port number.
+   *
+   * This function starts a scan on the specified port number. It sets the port number in the service detector,
+   * creates a TCP socket, opens it, and asynchronously connects to the specified host and port number. If the
+   * connection is successful, the port status is set to OPEN and the service detector is called to detect the service.
+   * If the connection fails, the port status is set to CLOSED.
+   *
+   * @param port_number The port number to scan.
+   */
   void TCPScanner::StartScan(uint16_t port_number) {
     service_detector_.SetPort(port_number);
     auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
@@ -408,8 +423,27 @@ namespace network {
     );
   }
 
+  /**
+   * @brief Get the port information.
+   *
+   * This function returns a constant reference to a map containing the port information.
+   * The map is of type std::map<int, Scanner::port_status>, where the key is an integer representing the port number,
+   * and the value is an enum Scanner::port_status representing the status of the port.
+   *
+   * @return A constant reference to the port information map.
+   */
   std::map<int, Scanner::port_status> const& TCPScanner::port_info() const {
     return port_info_;
+  }
+
+  /**
+   * @brief A map that associates a string key with a resolver_results value.
+   *
+   * The key is of type std::string, and the value is of type services::IServiceDetector::resolver_results.
+   * This map is used to store resolver results in the TCPScanner class.
+   */
+  std::map<std::string, services::IServiceDetector::resolver_results> const& TCPScanner::GetResolverResults() const {
+    return service_detector_.GetResolverResults();
   }
 
 }
