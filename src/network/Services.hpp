@@ -38,7 +38,6 @@ namespace network {
     using tcp_socket = tcp::socket;
     using tcp_resolver = tcp::resolver;
     using tcp_resolver_results = tcp::resolver::results_type;
-
     class IServiceDetector {
       public:
         struct resolver_results {
@@ -49,8 +48,7 @@ namespace network {
         };
         virtual ~IServiceDetector() = default;
         virtual void DetectService() = 0;
-        virtual std::map<std::string, resolver_results> const& GetResolverResults() const;
-
+        virtual std::map<std::string, resolver_results> const& GetResolverResults() const = 0;
     };
 
     class IVersionDetector {
@@ -87,7 +85,7 @@ namespace network {
 
     class VersionDetector : IVersionDetector {
       public:
-        VersionDetector(boost::asio::io_context& io_context, tcp::socket& socket);
+        VersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
         ~VersionDetector() override;
 
         void GrabBanner() override;
@@ -95,7 +93,10 @@ namespace network {
 
       private:
         boost::asio::io_context& io_context_;
-        tcp::socket& tcp_socket_;
+        std::string host_;
+        uint16_t port_;
+        tcp::resolver resolver_;
+        parasyte::error_handler::ErrorHandler error_handler_;
     };
 
     class FTPDetector : public ServiceDetector {

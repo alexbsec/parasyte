@@ -53,16 +53,25 @@ namespace network {
 
         for (const auto& result : results) {
           auto endpoint = result.endpoint();
-          resolver_results_.emplace(
-            endpoint.address().to_string(),
-            result.host_name(),
-            result.service_name(),
-            endpoint.port(),
-            endpoint.protocol().protocol()
-          );
+          resolver_results_[endpoint.address().to_string()] = resolver_results{
+            result.host_name(), result.service_name(), endpoint.port(), std::to_string(endpoint.protocol().protocol())
+          };
         }
       });
     }
+
+    VersionDetector::VersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port)
+        : io_context_(io_context)
+        , host_(host)
+        , port_(port)
+        , resolver_(io_context)
+        , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {}
+
+    VersionDetector::~VersionDetector() {}
+
+    void VersionDetector::GrabBanner() {}
+
+    void VersionDetector::DetectVersion() {}
   }
 }
 }
