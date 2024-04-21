@@ -20,6 +20,7 @@ set(SOURCE_FILES
     src/exploits/ExploitBase.cpp
     src/network/NetScanner.cpp
     src/network/NetUtils.cpp
+    src/network/Services.cpp
     src/payload/PayloadBase.cpp
     src/utils/Logger.cpp
 )
