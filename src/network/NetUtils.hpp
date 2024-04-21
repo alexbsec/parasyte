@@ -65,9 +65,11 @@ namespace network {
     boost::asio::ip::address_v4 GetIPv4Address(const std::string& if_name);
     boost::asio::ip::address_v6 GetIPv6Address(const std::string& if_name);
     std::string ReadIPv6Address(std::string& str);
+    std::string PortToService(uint16_t port_number, const std::string& protocol);
 
     // Structs
     struct in6_addr StringToAddress(std::string address);
+    struct in_addr StringToAddressV4(std::string address);
 
     struct iphdr {
         unsigned int ihl : 4;      // IP header length

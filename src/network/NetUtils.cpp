@@ -20,6 +20,17 @@
 #include "NetUtils.hpp"
 #include <arpa/inet.h>
 #include <iostream>
+#include <map>
+
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+// Link with ws2_32.lib
+#pragma comment(lib, "Ws2_32.lib")
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#endif
 
 /* CODE START */
 
@@ -129,13 +140,44 @@ struct in6_addr parasyte::network::utils::StringToAddress(std::string address) {
   return addr;
 }
 
+struct in_addr parasyte::network::utils::StringToAddressV4(std::string address) {
+  struct in_addr addr;
+  inet_pton(AF_INET, address.c_str(), &(addr));
+  return addr;
+}
+
+std::string parasyte::network::utils::PortToService(uint16_t port_number, const std::string& protocol) {
+#if defined(_WIN32)
+  WSADATA wsaData;
+  int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (result != 0) {
+    std::cerr << "WSAStartup failed: " << result << std::endl;
+    return "ServiceNamePlaceholder";
+  }
+
+  // Implementation for windows
+  WSACleanup();
+
+  return "ServiceNamePlaceholder";
+
+#else
+  // POSIX compliant systems (Linux/macOS)
+  struct servent* service = getservbyport(htons(port_number), protocol.c_str());
+  if (service) {
+    return service->s_name;
+  } else {
+    return std::to_string(port_number);
+  }
+#endif
+}
+
 /* Classes implementation */
 
 /**
  * Constructor for the RouteTableIPv4 class.
  * Reads the route information from the /proc/net/route file and initializes the route_info_list_ member variable.
  */
-parasyte::network::utils::RouteTableIPv4::RouteTableIPv4() {
+parasyte::network::utils::RouteTableIPv4::RouteTableIPv4() {  // Print a message to the console
   std::ifstream route_table_ipv4_proc(proc_route_ipv4_);
   InitStream(route_table_ipv4_proc);
   for (RouteInfoIPv4 route_info_ipv4; ReadRouteInfo(route_table_ipv4_proc, route_info_ipv4);) {
@@ -154,9 +196,9 @@ parasyte::network::utils::RouteTableIPv4::DefaultIPv4Route() const {
   return std::find_if(route_info_list_.begin(), route_info_list_.end(), [](RouteInfoIPv4 const& route_info) {
     // The lambda function is the callback that is passed to std::find_if
     // It takes a RouteInfoIPv4 object as input and returns a boolean value
-    // The lambda function checks if the destination address of the route_info object is equal to boost::asio::ip::address_v4()
-    // If it is, it returns true and std::find_if stops the search and returns the iterator pointing to the current route_info
-    // object If it is not, it returns false and std::find_if continues the search
+    // The lambda function checks if the destination address of the route_info object is equal to
+    // boost::asio::ip::address_v4() If it is, it returns true and std::find_if stops the search and returns the iterator
+    // pointing to the current route_info object If it is not, it returns false and std::find_if continues the search
     return route_info.dest == boost::asio::ip::address_v4();
   });
 }
@@ -176,14 +218,15 @@ std::vector<parasyte::network::utils::RouteInfoIPv4>::const_iterator parasyte::n
     route_info_list_.begin();  // Initialize the iterator to the beginning of the route_info_list_
 
   for (; it != route_info_list_.end(); ++it) {  // Iterate through each route in the route_info_list_
-    if (it == default_route_table) continue;    // Skip the default route
-    if (boost::asio::ip::address_v4::broadcast(target, it->netmask) == it->dest)
+    if (it == default_route_table) continue;    // Skip the default routes
+    if (boost::asio::ip::address_v4::broadcast(target, it->netmask) == it->dest) {
       break;  // Check if the broadcast address of the target matches the destination address of the current route
+    }
   }
 
   return (it == route_info_list_.end()) ? default_route_table
-                                        : it;  // Return the iterator pointing to the matching route, or the iterator pointing
-                                               // to the default route if no match is found
+                                        : it;  // Return the iterator pointing to the matching route, or the iterator
+                                               // pointing to the default route if no match is found
 }
 
 /**
@@ -209,14 +252,12 @@ std::istream& parasyte::network::utils::RouteTableIPv4::InitStream(std::istream&
  */
 std::ifstream& parasyte::network::utils::RouteTableIPv4::ReadRouteInfo(std::ifstream& stream, RouteInfoIPv4& route_info) {
   uint32_t dest, gateway, netmask;
-
   stream >> route_info.name >> std::hex >> dest >> gateway >> std::dec >> route_info.flags >> route_info.ref_count >>
     route_info.use >> route_info.metric >> std::hex >> netmask >> std::dec >> route_info.mtu >> route_info.window >>
     route_info.ip_route_table;
   route_info.dest = boost::asio::ip::address_v4(ntohl(dest));
   route_info.gateway = boost::asio::ip::address_v4(ntohl(gateway));
   route_info.netmask = boost::asio::ip::address_v4(ntohl(netmask));
-
   return stream;
 }
 
@@ -236,8 +277,8 @@ parasyte::network::utils::RouteTableIPv6::RouteTableIPv6() {
 /**
  * @brief Returns an iterator pointing to the first occurrence of a default IPv6 route in the route_info_list_ vector.
  *
- * @return std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator An iterator pointing to the default IPv6 route,
- * or the end iterator if not found.
+ * @return std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator An iterator pointing to the default IPv6
+ * route, or the end iterator if not found.
  */
 std::vector<parasyte::network::utils::RouteInfoIPv6>::const_iterator
 parasyte::network::utils::RouteTableIPv6::DefaultIPv6Route() const {
@@ -249,8 +290,8 @@ parasyte::network::utils::RouteTableIPv6::DefaultIPv6Route() const {
 /**
  * @brief Finds the iterator pointing to the first occurrence of a given target address in the route_info_list_ vector.
  *
- * This function searches for the target address in the route_info_list_ vector and returns the iterator pointing to the first
- * occurrence of the target address. If the target address is not found, it returns the iterator pointing to the
+ * This function searches for the target address in the route_info_list_ vector and returns the iterator pointing to the
+ * first occurrence of the target address. If the target address is not found, it returns the iterator pointing to the
  * default_table_route.
  *
  * @param target The target address to search for in the route_info_list_ vector.
