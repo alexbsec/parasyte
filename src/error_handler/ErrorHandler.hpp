@@ -68,6 +68,10 @@ namespace error_handler {
         }
       }
 
+      void SetType(error_type type) {
+        error_type_ = type;
+      }
+
     private:
       error_type error_type_;
   };
