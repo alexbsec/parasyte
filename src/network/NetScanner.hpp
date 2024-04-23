@@ -43,6 +43,9 @@
 namespace parasyte {
 namespace network {
 
+  std::unique_ptr<services::IVersionDetector>
+  SetVersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
+
   enum class ScannerType {
     RAW,
     TCP,
@@ -89,6 +92,7 @@ namespace network {
         return port_info_;
       };
       virtual std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const = 0;
+      virtual void DetectVersion() = 0;
 
     protected:
       std::map<int, port_status> port_info_;
@@ -122,6 +126,7 @@ namespace network {
       void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const override;
       std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
+      void DetectVersion() override;
 
     private:
       void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
@@ -136,6 +141,7 @@ namespace network {
       void PopulatePortInfo(int port, port_status status);
       std::map<int, port_status> port_info_;
       services::ServiceDetector service_detector_;
+      std::unique_ptr<services::IVersionDetector> version_detector_;
       std::map<std::string, services::IServiceDetector::resolver_results> resolver_results_;
 
       int timeout_miliseconds_;
@@ -159,6 +165,7 @@ namespace network {
       void StartScan(uint16_t port_number) override;
       std::map<int, port_status> const& port_info() const override;
       std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
+      void DetectVersion() override;
 
     private:
       int timeout_milliseconds_;
@@ -168,6 +175,7 @@ namespace network {
       parasyte::error_handler::ErrorHandler error_handler_;
       parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
       parasyte::network::services::ServiceDetector service_detector_;
+      std::unique_ptr<parasyte::network::services::IVersionDetector> version_detector_;
   };
 }
 }

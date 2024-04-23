@@ -17,6 +17,7 @@
 
 // Include declarations
 
+#include <functional>
 #include <iostream>
 #include <regex>
 #include <string>
@@ -29,6 +30,7 @@
 namespace parasyte {
 namespace network {
   namespace services {
+
     ServiceDetector::ServiceDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port)
         : io_context_(io_context)
         , host_(host)
@@ -85,7 +87,8 @@ namespace network {
      * @return True if the parsing is successful, false otherwise.
      */
     bool vsFTPBannerParseStrategy::Parse(const std::string& banner, std::string& server, std::string& version) {
-      std::regex version_regex("vsftpd ([0-9]+\\.[0-9]+\\.[0-9]+)");
+      std::cout << banner << std::endl;
+      std::regex version_regex("vsFTPd ([0-9]+\\.[0-9]+\\.[0-9]+)");
       std::smatch match;
       if (std::regex_search(banner, match, version_regex)) {
         version = match[1];
@@ -165,12 +168,11 @@ namespace network {
      * @see PureFTPBannerParseStrategy
      * @see MicrosoftFTPBannerParseStrategy
      */
-    BannerParser::BannerParser() : server_(""), version_("") {
-      strategies_.push_back(std::make_unique<vsFTPBannerParseStrategy>());
-      strategies_.push_back(std::make_unique<ProFTPBannerParseStrategy>());
-      strategies_.push_back(std::make_unique<PureFTPBannerParseStrategy>());
-      strategies_.push_back(std::make_unique<MicrosoftFTPBannerParseStrategy>());
-    }
+    BannerParser::BannerParser(const uint16_t& port_number)
+        : server_("")
+        , version_("")
+        , port_number_(port_number)
+        , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {}
 
     /**
      * Parses the given banner and extracts the server and version information.
@@ -180,7 +182,13 @@ namespace network {
      * @param version [out] The extracted version information.
      * @return `true` if the banner was successfully parsed, `false` otherwise.
      */
-    bool BannerParser::ParseBanner(const std::string& banner, std::string& server, std::string& version) {
+    bool BannerParser::ParseBanner(
+      const std::string& banner,
+      const std::string& protocol,
+      std::string& server,
+      std::string& version
+    ) {
+      SetStrategies(protocol);
       for (auto& strategy : strategies_) {
         if (strategy->Parse(banner, server, version)) {
           server_ = server;
@@ -189,6 +197,24 @@ namespace network {
         }
       }
       return false;
+    }
+
+    void BannerParser::SetStrategies(const std::string& protocol) {
+      if (protocol != "tcp" && protocol != "udp") {
+        error_handler_.SetType(parasyte::error_handler::ErrorHandler::error_type::WARNING);
+        error_handler_.HandleError("Invalid protocol. Aborting...");
+        return;
+      }
+      std::string service = parasyte::network::utils::PortToService(port_number_, protocol);
+      if (service == "ftp") {
+        strategies_.push_back(std::make_unique<vsFTPBannerParseStrategy>());
+        strategies_.push_back(std::make_unique<ProFTPBannerParseStrategy>());
+        strategies_.push_back(std::make_unique<PureFTPBannerParseStrategy>());
+        strategies_.push_back(std::make_unique<MicrosoftFTPBannerParseStrategy>());
+      } else {
+        error_handler_.SetType(parasyte::error_handler::ErrorHandler::error_type::WARNING);
+        error_handler_.HandleError("Invalid service. Aborting...");
+      }
     }
 
     FTPDetector::FTPDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port)
@@ -215,11 +241,15 @@ namespace network {
       tcp_resolver resolver(io_context_);
       tcp_resolver::query query(host_, std::to_string(port_));
 
+      std::cout << "Resolving host"
+                << "\n";
       resolver.async_resolve(query, [this, &socket](const error_code& ec, tcp_resolver_results results) {
         if (ec) {
           error_handler_.HandleError(ec.message());
           return;
         }
+        std::cout << "Start connecting"
+                  << "\n";
         boost::asio::async_connect(
           socket,
           results.begin(),
@@ -230,15 +260,17 @@ namespace network {
               return;
             }
             boost::asio::streambuf response;
+            std::cout << "Start reading" << std::endl;
             boost::asio::async_read_until(
               socket,
               response,
               "\r\n",
-              [this, &response](const boost::system::error_code& ec, std::size_t /*length*/) {
+              [this, &response](const boost::system::error_code& ec, std::size_t len) {
                 if (ec) {
                   error_handler_.HandleError(ec.message());
                   return;
                 }
+                std::cout << "Getting banner" << std::endl;
                 std::istream response_stream(&response);
                 std::getline(response_stream, banner_);
               }
@@ -252,14 +284,14 @@ namespace network {
      * @brief Detects the version of the FTP server.
      */
     void FTPDetector::DetectVersion() {
-      BannerParser parser = BannerParser();
+      GrabBanner();
+      BannerParser parser = BannerParser(port_);
       std::string server = "", version = "";
-      parser.ParseBanner(banner_, server, version);
+      parser.ParseBanner(banner_, "tcp", server, version);
       version = version.empty() ? "unknown" : version;
       std::cout << "Server: " << server << "\n";
       std::cout << "Version: " << version << "\n";
     }
-
   }
 }
 }

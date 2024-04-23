@@ -24,9 +24,11 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <map>
+#include <memory>
 
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
+#include "NetUtils.hpp"
 
 /* CODE START */
 
@@ -38,6 +40,7 @@ namespace network {
     using tcp_socket = tcp::socket;
     using tcp_resolver = tcp::resolver;
     using tcp_resolver_results = tcp::resolver::results_type;
+
     class IServiceDetector {
       public:
         struct resolver_results {
@@ -111,9 +114,9 @@ namespace network {
 
     class BannerParser {
       public:
-        BannerParser();
+        BannerParser(const uint16_t& port_number);
 
-        bool ParseBanner(const std::string& banner, std::string& server, std::string& version);
+        bool ParseBanner(const std::string& banner, const std::string& protocol, std::string& server, std::string& version);
         std::string GetServer() const {
           return server_;
         }
@@ -122,9 +125,13 @@ namespace network {
         }
 
       private:
+        void SetStrategies(const std::string& protocol);
         std::vector<std::unique_ptr<IBannerParseStrategy>> strategies_;
         std::string server_;
         std::string version_;
+        std::string protocol_;
+        uint16_t port_number_;
+        parasyte::error_handler::ErrorHandler error_handler_;
     };
 
     class FTPDetector : public IVersionDetector {
@@ -143,6 +150,7 @@ namespace network {
         parasyte::error_handler::ErrorHandler error_handler_;
         std::string banner_;
     };
+
   }
 }
 }
