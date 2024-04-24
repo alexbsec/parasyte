@@ -96,6 +96,7 @@ namespace network {
 
     protected:
       std::map<int, port_status> port_info_;
+      parasyte::network::services::ServerInfo server_info_ = {"", ""};
   };
 
   class NetScanner {
@@ -139,6 +140,7 @@ namespace network {
       SrcSeq MakeIPv4Segment(stream_buffer& buffer, uint16_t port);
       SrcSeq MakeIPv6Segment(stream_buffer& buffer, uint16_t port);
       void PopulatePortInfo(int port, port_status status);
+      parasyte::network::services::ServerInfo server_info_ = {"", ""};
       std::map<int, port_status> port_info_;
       services::ServiceDetector service_detector_;
       std::unique_ptr<services::IVersionDetector> version_detector_;
@@ -169,6 +171,7 @@ namespace network {
 
     private:
       int timeout_milliseconds_;
+      parasyte::network::services::ServerInfo server_info_ = {"", ""};
       std::map<int, port_status> port_info_;
       boost::asio::io_context& io_context_;
       std::string host_;
