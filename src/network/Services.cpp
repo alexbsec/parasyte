@@ -237,47 +237,24 @@ namespace network {
      * @note This function is asynchronous and requires an active io_context.
      */
     void FTPDetector::GrabBanner() {
-      tcp_socket socket(io_context_);
-      tcp_resolver resolver(io_context_);
-      tcp_resolver::query query(host_, std::to_string(port_));
+      try {
+        tcp::socket socket(io_context_);
+        tcp::resolver resolver(io_context_);
+        tcp::resolver::results_type endpoints = resolver.resolve(host_, std::to_string(port_));
 
-      std::cout << "Resolving host"
-                << "\n";
-      resolver.async_resolve(query, [this, &socket](const error_code& ec, tcp_resolver_results results) {
-        if (ec) {
-          error_handler_.HandleError(ec.message());
-          return;
-        }
-        std::cout << "Start connecting"
-                  << "\n";
-        boost::asio::async_connect(
-          socket,
-          results.begin(),
-          results.end(),
-          [this, &socket](const error_code& ec, tcp_resolver_results::iterator endpoint_it) {
-            if (ec) {
-              error_handler_.HandleError(ec.message());
-              return;
-            }
-            boost::asio::streambuf response;
-            std::cout << "Start reading" << std::endl;
-            boost::asio::async_read_until(
-              socket,
-              response,
-              "\r\n",
-              [this, &response](const boost::system::error_code& ec, std::size_t len) {
-                if (ec) {
-                  error_handler_.HandleError(ec.message());
-                  return;
-                }
-                std::cout << "Getting banner" << std::endl;
-                std::istream response_stream(&response);
-                std::getline(response_stream, banner_);
-              }
-            );
-          }
-        );
-      });
+        // Synchronous connect
+        boost::asio::connect(socket, endpoints);
+
+        boost::asio::streambuf response;
+        boost::asio::read_until(socket, response, "\r\n");
+
+        std::istream response_stream(&response);
+        std::getline(response_stream, banner_);
+        // std::cout << "Banner received: " << banner_ << std::endl;
+      }
+      catch (const std::exception& e) {
+        error_handler_.HandleError(e.what());
+      }
     }
 
     /**
