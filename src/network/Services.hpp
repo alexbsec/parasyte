@@ -42,6 +42,11 @@ namespace network {
     using tcp_resolver = tcp::resolver;
     using tcp_resolver_results = tcp::resolver::results_type;
 
+    struct ServerInfo {
+        std::string server;
+        std::string version;
+    };
+
     class IServiceDetector {
       public:
         struct resolver_results {
@@ -60,6 +65,7 @@ namespace network {
         virtual ~IVersionDetector() = default;
         virtual void GrabBanner() = 0;
         virtual void DetectVersion() = 0;
+        virtual ServerInfo GetServerInfo() const = 0;
     };
 
     class IBannerParseStrategy {
@@ -142,8 +148,10 @@ namespace network {
 
         void GrabBanner() override;
         void DetectVersion() override;
+        ServerInfo GetServerInfo() const override;
 
       private:
+        ServerInfo server_info_;
         boost::asio::io_context& io_context_;
         std::string host_;
         uint16_t port_;
