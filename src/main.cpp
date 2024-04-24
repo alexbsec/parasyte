@@ -6,7 +6,7 @@
 int main() {
   // try {
   boost::asio::io_context io_context;
-  std::string host = "192.168.0.157";
+  std::string host = "127.0.0.1";
   parasyte::network::utils::RawProtocol protocol = parasyte::network::utils::RawProtocol::v4();
   int timeout = 10000;
   parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::TCP};
@@ -35,6 +35,7 @@ int main() {
       std::cout << "Service Name: " << parasyte::network::utils::PortToService(rrs.begin()->second.port, "tcp") << "\n";
       std::cout << "Port: " << rrs.begin()->second.port << "\n";
       std::cout << "Protocol: " << rrs.begin()->second.protocol << "\n";
+      net_scanner.scanner->DetectVersion();
     }
   }
   // catch (const std::exception &e) {

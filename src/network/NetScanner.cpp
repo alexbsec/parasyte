@@ -18,6 +18,14 @@ using std::placeholders::_2;
 
 namespace parasyte {
 namespace network {
+  std::unique_ptr<services::IVersionDetector>
+  SetVersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port) {
+    switch (port) {
+      case 21:
+        return std::make_unique<services::FTPDetector>(io_context, host, port);
+    }
+  }
+
   NetScanner::NetScanner(boost::asio::io_context& io_context, ScannerParams const& params)
       : io_context_(io_context)
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
@@ -140,6 +148,14 @@ namespace network {
 
   std::map<std::string, services::IServiceDetector::resolver_results> const& RawScanner::GetResolverResults() const {
     return service_detector_.GetResolverResults();
+  }
+
+  void RawScanner::DetectVersion() {
+    if (version_detector_ == nullptr) {
+      error_handler_.HandleError("Version detector not set");
+      return;
+    }
+    version_detector_->DetectVersion();
   }
 
   /**
@@ -407,6 +423,7 @@ namespace network {
    * @param port_number The port number to scan.
    */
   void TCPScanner::StartScan(uint16_t port_number) {
+    version_detector_ = SetVersionDetector(io_context_, host_, port_number);
     service_detector_.SetPort(port_number);
     auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
     socket->open(boost::asio::ip::tcp::v4());
@@ -444,6 +461,19 @@ namespace network {
    */
   std::map<std::string, services::IServiceDetector::resolver_results> const& TCPScanner::GetResolverResults() const {
     return service_detector_.GetResolverResults();
+  }
+
+  /**
+   * @brief Detects the version using the version detector.
+   * If the version detector is not set, an error is handled.
+   */
+  void TCPScanner::DetectVersion() {
+    if (version_detector_ == nullptr) {
+      error_handler_.HandleError("Version detector not set");
+      return;
+    }
+    version_detector_->DetectVersion();
+    server_info_ = version_detector_->GetServerInfo();
   }
 
 }

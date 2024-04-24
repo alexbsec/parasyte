@@ -23,10 +23,13 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/streambuf.hpp>
+#include <future>
 #include <map>
+#include <memory>
 
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
+#include "NetUtils.hpp"
 
 /* CODE START */
 
@@ -38,6 +41,12 @@ namespace network {
     using tcp_socket = tcp::socket;
     using tcp_resolver = tcp::resolver;
     using tcp_resolver_results = tcp::resolver::results_type;
+
+    struct ServerInfo {
+        std::string server;
+        std::string version;
+    };
+
     class IServiceDetector {
       public:
         struct resolver_results {
@@ -54,8 +63,15 @@ namespace network {
     class IVersionDetector {
       public:
         virtual ~IVersionDetector() = default;
-        virtual void DetectVersion() = 0;
         virtual void GrabBanner() = 0;
+        virtual void DetectVersion() = 0;
+        virtual ServerInfo GetServerInfo() const = 0;
+    };
+
+    class IBannerParseStrategy {
+      public:
+        virtual ~IBannerParseStrategy() = default;
+        virtual bool Parse(const std::string& banner, std::string& server, std::string& version) = 0;
     };
 
     class ServiceDetector : public IServiceDetector {
@@ -83,36 +99,65 @@ namespace network {
         parasyte::error_handler::ErrorHandler error_handler_;
     };
 
-    class VersionDetector : IVersionDetector {
+    class vsFTPBannerParseStrategy : public IBannerParseStrategy {
       public:
-        VersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
-        ~VersionDetector() override;
+        bool Parse(const std::string& banner, std::string& server, std::string& version) override;
+    };
+
+    class ProFTPBannerParseStrategy : public IBannerParseStrategy {
+      public:
+        bool Parse(const std::string& banner, std::string& server, std::string& version) override;
+    };
+
+    class PureFTPBannerParseStrategy : public IBannerParseStrategy {
+      public:
+        bool Parse(const std::string& banner, std::string& server, std::string& version) override;
+    };
+
+    class MicrosoftFTPBannerParseStrategy : public IBannerParseStrategy {
+      public:
+        bool Parse(const std::string& banner, std::string& server, std::string& version) override;
+    };
+
+    class BannerParser {
+      public:
+        BannerParser(const uint16_t& port_number);
+
+        bool ParseBanner(const std::string& banner, const std::string& protocol, std::string& server, std::string& version);
+        std::string GetServer() const {
+          return server_;
+        }
+        std::string GetVersion() const {
+          return version_;
+        }
+
+      private:
+        void SetStrategies(const std::string& protocol);
+        std::vector<std::unique_ptr<IBannerParseStrategy>> strategies_;
+        std::string server_;
+        std::string version_;
+        std::string protocol_;
+        uint16_t port_number_;
+        parasyte::error_handler::ErrorHandler error_handler_;
+    };
+
+    class FTPDetector : public IVersionDetector {
+      public:
+        FTPDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
+        ~FTPDetector() override;
 
         void GrabBanner() override;
         void DetectVersion() override;
+        ServerInfo GetServerInfo() const override;
 
       private:
+        ServerInfo server_info_;
         boost::asio::io_context& io_context_;
         std::string host_;
         uint16_t port_;
         tcp::resolver resolver_;
         parasyte::error_handler::ErrorHandler error_handler_;
-    };
-
-    class FTPDetector : public ServiceDetector {
-      public:
-        FTPDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
-        ~FTPDetector() override;
-
-        void DetectService() override;
-    };
-
-    class SMBDetector : public ServiceDetector {
-      public:
-        SMBDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
-        ~SMBDetector() override;
-
-        void DetectService() override;
+        std::string banner_;
     };
 
   }
