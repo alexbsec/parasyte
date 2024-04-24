@@ -473,6 +473,7 @@ namespace network {
       return;
     }
     version_detector_->DetectVersion();
+    server_info_ = version_detector_->GetServerInfo();
   }
 
 }
