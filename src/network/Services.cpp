@@ -265,9 +265,20 @@ namespace network {
       BannerParser parser = BannerParser(port_);
       std::string server = "", version = "";
       parser.ParseBanner(banner_, "tcp", server, version);
+      server = server.empty() ? "unknown" : server;
       version = version.empty() ? "unknown" : version;
-      std::cout << "Server: " << server << "\n";
-      std::cout << "Version: " << version << "\n";
+      server_info_ = {server, version};
+    }
+
+    /**
+     * @brief Retrieves the server information.
+     *
+     * This function returns the server information stored in the `server_info_` member variable.
+     *
+     * @return The server information.
+     */
+    ServerInfo FTPDetector::GetServerInfo() const {
+      return server_info_;
     }
   }
 }
