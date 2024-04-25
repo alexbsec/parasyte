@@ -267,7 +267,7 @@ namespace network {
       parser.ParseBanner(banner_, "tcp", server, version);
       server = server.empty() ? "unknown" : server;
       version = version.empty() ? "unknown" : version;
-      server_info_ = {server, version};
+      server_info_ = {server, version, host_, port_};
     }
 
     /**

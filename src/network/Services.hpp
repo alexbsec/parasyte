@@ -45,6 +45,8 @@ namespace network {
     struct ServerInfo {
         std::string server;
         std::string version;
+        std::string host;
+        uint16_t port;
     };
 
     class IServiceDetector {
