@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include "../error_handler/ErrorHandler.hpp"
+
 #ifdef _WIN32  // For both 32-bit and 64-bit environments
 #include <Winsock2.h>
 #include <Ws2tcpip.h>
@@ -66,10 +68,32 @@ namespace network {
     boost::asio::ip::address_v6 GetIPv6Address(const std::string& if_name);
     std::string ReadIPv6Address(std::string& str);
     std::string PortToService(uint16_t port_number, const std::string& protocol);
+    uint16_t ICMPChecksum(const void* buffer, int buffer_size);
 
     // Structs
     struct in6_addr StringToAddress(std::string address);
     struct in_addr StringToAddressV4(std::string address);
+
+    struct icmp_header {
+        uint8_t type;
+        uint8_t code;
+        uint16_t checksum;
+        uint16_t identifier;
+        uint16_t sequence_number;
+
+        // Default constructor
+        icmp_header() : type(0), code(0), checksum(0), identifier(0), sequence_number(0) {}
+
+        // Serialize the ICMP header into an output stream.
+        friend std::ostream& operator<<(std::ostream& os, const icmp_header& header) {
+          return os.write(reinterpret_cast<const char*>(&header), sizeof(header));
+        }
+
+        // Deserialize the ICMP header from an input stream.
+        friend std::istream& operator>>(std::istream& is, icmp_header& header) {
+          return is.read(reinterpret_cast<char*>(&header), sizeof(header));
+        }
+    };
 
     struct iphdr {
         unsigned int ihl : 4;      // IP header length
@@ -681,7 +705,6 @@ namespace network {
       private:
         bool option_value_ = Init;
     };
-
   }
 }
 }
