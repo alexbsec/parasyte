@@ -18,6 +18,14 @@ using std::placeholders::_2;
 
 namespace parasyte {
 namespace network {
+  /**
+   * Creates a unique pointer to an object implementing the IVersionDetector interface.
+   *
+   * @param io_context The boost::asio::io_context object to use for asynchronous operations.
+   * @param host The host to scan for the version.
+   * @param port The port to use for the scan.
+   * @return A unique pointer to an object implementing the IVersionDetector interface.
+   */
   std::unique_ptr<services::IVersionDetector>
   SetVersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port) {
     switch (port) {
@@ -26,20 +34,148 @@ namespace network {
     }
   }
 
+  /**
+   * @brief Constructs a Pinger object.
+   *
+   * This constructor initializes a Pinger object with the specified parameters.
+   *
+   * @param io_context The boost::asio::io_context object to be used for asynchronous operations.
+   * @param network The IPv4 network address.
+   * @param netmask The network mask in CIDR notation.
+   */
+  Pinger::Pinger(boost::asio::io_context& io_context, const boost::asio::ip::address_v4& network, uint8_t netmask)
+      : io_context_(io_context)
+      , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+    uint32_t net = network.to_uint() & MakeNetmask(netmask);
+    uint32_t broadcast = net | (~MakeNetmask(netmask));
+
+    for (uint32_t addr = net + 1; addr < broadcast; ++addr) {
+      destinations_.push_back(boost::asio::ip::address_v4(addr));
+    }
+  }
+
+  /**
+   * @brief Destructor for the Pinger class.
+   *
+   */
+  Pinger::~Pinger() {}
+
+  /**
+   * @brief Sends a ping request and starts receiving responses.
+   *
+   * This function sends a ping request to a target host and starts
+   * receiving the responses asynchronously.
+   */
+  void Pinger::Ping() {
+    logger_.Log(parasyte::utils::logging::LogLevel::INFO, "----- START PINGER -----");
+    StartSend();
+  }
+
+  /**
+   * @brief Starts sending ICMP echo requests to the destinations.
+   *
+   * This function sends ICMP echo requests to the destinations specified in the `destinations_` container.
+   * If there are no destinations, it sets an error and logs a message.
+   *
+   * @note This function is called recursively using `boost::asio::steady_timer` to send ICMP echo requests periodically.
+   *
+   * @return void
+   */
+  void Pinger::StartSend() {
+    if (destinations_.empty()) {
+      error_handler_.SetType(error_handler::ErrorHandler::error_type::ERROR);
+      logger_.Log(parasyte::utils::logging::LogLevel::ERROR, "No destinations to ping. Aborting pinger.");
+      error_handler_.HandleError("No destinations to ping. Aborting pinger.");
+      return;
+    }
+
+    bool is_up;
+
+    for (auto dest : destinations_) {
+      is_up = PingAddr(dest);
+      if (is_up) {
+        logger_.Log(parasyte::utils::logging::LogLevel::INFO, dest.to_string() + " is up.");
+        up_hosts_.push_back(dest);
+      }
+    }
+
+    if (up_hosts_.empty()) {
+      logger_.Log(parasyte::utils::logging::LogLevel::INFO, "No hosts are up.");
+    }
+  }
+
+  /**
+   * @brief Get the vector of up hosts.
+   *
+   * This function returns a constant reference to a vector of `boost::asio::ip::address_v4` objects.
+   * The vector contains the IP addresses of the hosts that are currently up.
+   *
+   * @return A constant reference to the vector of up hosts.
+   */
+  std::vector<boost::asio::ip::address_v4> const& Pinger::GetUpHosts() const {
+    return up_hosts_;
+  }
+
+  /**
+   * Calculates the network mask based on the given netmask value.
+   *
+   * @param netmask The netmask value (ranging from 0 to 32).
+   * @return The calculated network mask.
+   */
+  uint32_t Pinger::MakeNetmask(uint8_t netmask) {
+    return (netmask == 0) ? 0 : (~0u << (32 - netmask));
+  }
+
+  /**
+   * Pings the specified IPv4 address.
+   *
+   * @param addr The IPv4 address to ping.
+   * @return True if the ping is successful, false otherwise.
+   */
+  bool Pinger::PingAddr(const boost::asio::ip::address_v4& addr) {
+    boost::process::ipstream pipe_stream;
+    std::string ipv4_str = addr.to_string();
+    std::string command = "ping -c 1 " + ipv4_str;
+    boost::process::child child_process(command, boost::process::std_out > pipe_stream);
+    std::string line;
+    while (pipe_stream && std::getline(pipe_stream, line) && !line.empty())
+      continue;
+    child_process.wait();
+    return child_process.exit_code() == 0;
+  }
+
+  /**
+   * @brief Constructs a NetScanner object.
+   *
+   * This constructor initializes a NetScanner object with the given parameters.
+   * It creates a scanner based on the specified scanner type and assigns it to the 'scanner' member variable.
+   * If no scanner type is specified, an error is handled and the scan is aborted.
+   *
+   * @param io_context The boost::asio::io_context object to be used for asynchronous operations.
+   * @param params The ScannerParams object containing the scanner parameters.
+   */
   NetScanner::NetScanner(boost::asio::io_context& io_context, ScannerParams const& params)
       : io_context_(io_context)
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+    boost::asio::ip::address_v4 local_ipv4 = utils::GetLocalIPv4Address();
     switch (params.scanner_type) {
       case ScannerType::RAW:
-        scanner = std::make_unique<RawScanner>(io_context, params.host, params.protocol, params.timeout);
+        scanner = std::make_unique<RawScanner>(io_context, local_ipv4.to_string(), params.protocol, params.timeout);
         break;
       case ScannerType::TCP:
-        scanner = std::make_unique<TCPScanner>(io_context, params.host, params.timeout);
+        scanner = std::make_unique<TCPScanner>(io_context, local_ipv4.to_string(), params.timeout);
         break;
     }
 
+    pinger = std::make_unique<Pinger>(io_context, local_ipv4, 24);
+
     if (scanner == nullptr) {
       error_handler_.HandleError("No scanner type specified. Aborting scan.");
+      return;
+    }
+
+    if (pinger == nullptr) {
+      error_handler_.HandleError("No pinger object created. Aborting scan.");
       return;
     }
   }

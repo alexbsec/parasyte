@@ -209,6 +209,26 @@ namespace network {
       return ~sum;
     }
 
+    /**
+     * @brief Get the local IPv4 address.
+     *
+     * This function uses Boost.Asio library to retrieve the local IPv4 address.
+     * It creates an IO context, a resolver, and a socket to connect to a remote endpoint.
+     * The local endpoint of the socket is then returned as the local IPv4 address.
+     *
+     * @return The local IPv4 address.
+     */
+    boost::asio::ip::address_v4 GetLocalIPv4Address() {
+      boost::asio::io_context io_context;
+      boost::asio::ip::udp::resolver resolver(io_context);
+      boost::asio::ip::udp::endpoint endpoint = *resolver.resolve(boost::asio::ip::udp::v4(), "8.8.8.8", "53").begin();
+
+      boost::asio::ip::udp::socket socket(io_context);
+      socket.connect(endpoint);
+
+      return socket.local_endpoint().address().to_v4();
+    }
+
     /* Classes implementation */
 
     /**

@@ -27,11 +27,14 @@
 #include <string>
 #include <tuple>
 
+#include <boost/asio.hpp>
 #include <boost/asio/basic_raw_socket.hpp>
 #include <boost/asio/basic_socket.hpp>
 #include <boost/asio/basic_waitable_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/streambuf.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/process.hpp>
 
 #include "../error_handler/ErrorHandler.hpp"
 #include "../utils/Logger.hpp"
@@ -56,6 +59,32 @@ namespace network {
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol;
       int timeout;
       ScannerType scanner_type;
+  };
+
+  class Pinger {
+    public:
+      Pinger(boost::asio::io_context& io_context, const boost::asio::ip::address_v4& network, uint8_t netmask);
+      ~Pinger();
+
+      void Ping();
+      void StartSend();
+      std::vector<boost::asio::ip::address_v4> const& GetUpHosts() const;
+
+    private:
+      static unsigned short GetIdentifier() {
+#if defined(BOOST_ASIO_WINDOWS)
+        return static_cast<unsigned short>(::GetCurrentProcessId());
+#else
+        return static_cast<unsigned short>(::getpid());
+#endif
+      }
+      boost::asio::io_context& io_context_;
+      std::vector<boost::asio::ip::address_v4> destinations_;
+      std::vector<boost::asio::ip::address_v4> up_hosts_;
+      uint32_t MakeNetmask(uint8_t netmask);
+      bool PingAddr(const boost::asio::ip::address_v4& addr);
+      parasyte::error_handler::ErrorHandler error_handler_;
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("parasyte.log");
   };
 
   class Scanner {
@@ -107,6 +136,7 @@ namespace network {
       void SwapScannerType(ScannerParams const& params);
       void StartScan(uint16_t port_number);
       std::unique_ptr<Scanner> scanner;
+      std::unique_ptr<Pinger> pinger;
 
     private:
       boost::asio::io_context& io_context_;

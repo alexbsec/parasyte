@@ -69,6 +69,7 @@ namespace network {
     std::string ReadIPv6Address(std::string& str);
     std::string PortToService(uint16_t port_number, const std::string& protocol);
     uint16_t ICMPChecksum(const void* buffer, int buffer_size);
+    boost::asio::ip::address_v4 GetLocalIPv4Address();
 
     // Structs
     struct in6_addr StringToAddress(std::string address);
@@ -80,6 +81,9 @@ namespace network {
         uint16_t checksum;
         uint16_t identifier;
         uint16_t sequence_number;
+
+        static const uint8_t echo_request = 8;
+        static const uint8_t echo_reply = 0;
 
         // Default constructor
         icmp_header() : type(0), code(0), checksum(0), identifier(0), sequence_number(0) {}
