@@ -38,11 +38,11 @@ namespace network {
         , resolver_(io_context)
         , error_handler_(parasyte::error_handler::ErrorHandler::error_type::ERROR) {}
 
-    ServiceDetector::~ServiceDetector() {}
-
     void ServiceDetector::DetectService() {
       ResolveHost();
     }
+
+    ServiceDetector::~ServiceDetector() {}
 
     /**
      * @brief A map that associates a string key with a resolver_results value.

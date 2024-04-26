@@ -91,8 +91,6 @@ namespace network {
 
       private:
         void ResolveHost();
-        void OnResolveHost(const error_code& ec, tcp_resolver_results results);
-        void OnConnect(const error_code& ec);
         boost::asio::io_context& io_context_;
         std::string host_;
         tcp::resolver resolver_;
