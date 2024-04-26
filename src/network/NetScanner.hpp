@@ -117,15 +117,17 @@ namespace network {
 
       virtual ~Scanner() = default;
       virtual void StartScan(uint16_t port_number) = 0;
-      virtual std::map<int, port_status> const& port_info() const {
+      virtual std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> const& port_info() const {
         return port_info_;
       };
-      virtual std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const = 0;
+      virtual std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults(
+        boost::asio::ip::address_v4 host
+      ) const = 0;
       virtual void DetectVersion() = 0;
 
     protected:
-      std::map<int, port_status> port_info_;
-      parasyte::network::services::ServerInfo server_info_ = {"", ""};
+      std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
+      parasyte::network::services::ServerInfo server_info_ = {"", "", "", 0};
   };
 
   class NetScanner {
@@ -135,79 +137,39 @@ namespace network {
 
       void SwapScannerType(ScannerParams const& params);
       void StartScan(uint16_t port_number);
+      void Ping();
       std::unique_ptr<Scanner> scanner;
       std::unique_ptr<Pinger> pinger;
+      std::vector<boost::asio::ip::address_v4> const& GetUpHosts() const;
 
     private:
       boost::asio::io_context& io_context_;
       parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
       parasyte::error_handler::ErrorHandler error_handler_;
-  };
-
-  class RawScanner : public Scanner {
-    public:
-      RawScanner(
-        boost::asio::io_context& io_context,
-        const std::string& host,
-        parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol,
-        int miliseconds
-      );
-      ~RawScanner();
-
-      void StartScan(uint16_t port_number) override;
-      std::map<int, port_status> const& port_info() const override;
-      std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
-      void DetectVersion() override;
-
-    private:
-      void StartTimer(int milliseconds, ScanInfo scan_info, shared_timer timer);
-      void StartReceive(ScanInfo scan_info, shared_timer timer);
-      void HandleScan(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer);
-      void HandleReceive(error_code error, std::size_t len, ScanInfo scan_info, shared_buffer buffer, shared_timer timer);
-      void Timeout(error_code error, ScanInfo scan_info, shared_timer timer);
-      using SrcSeq = std::tuple<uint16_t, uint32_t>;
-      SrcSeq MakeSegment(stream_buffer& buffer, uint16_t port);
-      SrcSeq MakeIPv4Segment(stream_buffer& buffer, uint16_t port);
-      SrcSeq MakeIPv6Segment(stream_buffer& buffer, uint16_t port);
-      void PopulatePortInfo(int port, port_status status);
-      parasyte::network::services::ServerInfo server_info_ = {"", ""};
-      std::map<int, port_status> port_info_;
-      services::ServiceDetector service_detector_;
-      std::unique_ptr<services::IVersionDetector> version_detector_;
-      std::map<std::string, services::IServiceDetector::resolver_results> resolver_results_;
-
-      int timeout_miliseconds_;
-      std::set<uint16_t> timeout_port_;
-      boost::asio::io_context& io_context_;
-      parasyte::network::utils::RawProtocol::basic_raw_socket socket_;
-      parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol_;
-      parasyte::network::utils::RawProtocol::endpoint destination_;
-
-      parasyte::network::utils::RouteTableIPv4 route_table_ipv4_;
-      parasyte::network::utils::RouteTableIPv6 route_table_ipv6_;
-      parasyte::error_handler::ErrorHandler error_handler_;
-      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
+      std::vector<boost::asio::ip::address_v4> up_hosts_;
   };
 
   class TCPScanner : public Scanner {
     public:
-      TCPScanner(boost::asio::io_context& io_context, const std::string& host, int miliseconds);
+      TCPScanner(boost::asio::io_context& io_context, const std::vector<boost::asio::ip::address_v4>& hosts, int miliseconds);
       ~TCPScanner();
 
       void StartScan(uint16_t port_number) override;
-      std::map<int, port_status> const& port_info() const override;
-      std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults() const override;
+      std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> const& port_info() const override;
+      std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults(
+        boost::asio::ip::address_v4 host
+      ) const override;
       void DetectVersion() override;
 
     private:
       int timeout_milliseconds_;
-      parasyte::network::services::ServerInfo server_info_ = {"", ""};
-      std::map<int, port_status> port_info_;
+      parasyte::network::services::ServerInfo server_info_ = {"", "", "", 0};
+      std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
       boost::asio::io_context& io_context_;
-      std::string host_;
+      std::vector<boost::asio::ip::address_v4> hosts_ = {};
       parasyte::error_handler::ErrorHandler error_handler_;
       parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
-      parasyte::network::services::ServiceDetector service_detector_;
+      std::map<boost::asio::ip::address_v4, parasyte::network::services::ServiceDetector> service_detectors_;
       std::unique_ptr<parasyte::network::services::IVersionDetector> version_detector_;
   };
 }
