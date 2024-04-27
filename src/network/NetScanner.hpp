@@ -49,6 +49,13 @@ namespace network {
   std::unique_ptr<services::IVersionDetector>
   SetVersionDetector(boost::asio::io_context& io_context, const std::string& host, const uint16_t& port);
 
+  enum class port_status {
+    OPEN,
+    CLOSED,
+    FILTERED,
+    ABORTED,
+  };
+
   enum class ScannerType {
     RAW,
     TCP,
@@ -96,13 +103,6 @@ namespace network {
       using shared_buffer = std::shared_ptr<stream_buffer>;
       using LogLevel = parasyte::utils::logging::LogLevel;
 
-      enum port_status {
-        OPEN,
-        CLOSED,
-        FILTERED,
-        ABORTED,
-      };
-
       struct ScanInfo {
           uint16_t port;
           std::chrono::steady_clock::time_point send_time;
@@ -123,11 +123,12 @@ namespace network {
       virtual std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults(
         boost::asio::ip::address_v4 host
       ) const = 0;
-      virtual void DetectVersion() = 0;
+      virtual void DetectVersion(boost::asio::ip::address_v4 host) = 0;
+      virtual std::vector<parasyte::network::services::ServerInfo> GetAllServerInfo() = 0;
 
     protected:
       std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
-      parasyte::network::services::ServerInfo server_info_ = {"", "", "", 0};
+      std::vector<parasyte::network::services::ServerInfo> servers_info_ = {{"", "", "", 0}};
   };
 
   class NetScanner {
@@ -159,18 +160,20 @@ namespace network {
       std::map<std::string, services::IServiceDetector::resolver_results> const& GetResolverResults(
         boost::asio::ip::address_v4 host
       ) const override;
-      void DetectVersion() override;
+      void DetectVersion(boost::asio::ip::address_v4 host) override;
+      std::vector<parasyte::network::services::ServerInfo> GetAllServerInfo() override;
 
     private:
       int timeout_milliseconds_;
-      parasyte::network::services::ServerInfo server_info_ = {"", "", "", 0};
+      std::vector<parasyte::network::services::ServerInfo> servers_info_ = {{"", "", "", 0}};
+      std::map<boost::asio::ip::address_v4, int> hosts_ports_;
       std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
       boost::asio::io_context& io_context_;
       std::vector<boost::asio::ip::address_v4> hosts_ = {};
       parasyte::error_handler::ErrorHandler error_handler_;
       parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
       std::map<boost::asio::ip::address_v4, parasyte::network::services::ServiceDetector> service_detectors_;
-      std::unique_ptr<parasyte::network::services::IVersionDetector> version_detector_;
+      std::map<boost::asio::ip::address_v4, std::unique_ptr<parasyte::network::services::IVersionDetector>> version_detectors_;
   };
 }
 }

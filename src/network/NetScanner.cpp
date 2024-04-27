@@ -250,7 +250,7 @@ namespace network {
    */
   void TCPScanner::StartScan(uint16_t port_number) {
     for (auto host_ : hosts_) {
-      version_detector_ = SetVersionDetector(io_context_, host_.to_string(), port_number);
+      version_detectors_.try_emplace(host_, SetVersionDetector(io_context_, host_.to_string(), port_number));
       service_detectors_.at(host_).SetPort(port_number);
       auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
       socket->open(boost::asio::ip::tcp::v4());
@@ -263,6 +263,7 @@ namespace network {
           } else {
             port_info_[std::make_pair(host_, port_number)] = port_status::CLOSED;
           }
+          hosts_ports_.at(host_) = port_number;
         }
       );
     }
@@ -272,12 +273,12 @@ namespace network {
    * @brief Get the port information.
    *
    * This function returns a constant reference to a map containing the port information.
-   * The map is of type std::map<int, Scanner::port_status>, where the key is an integer representing the port number,
-   * and the value is an enum Scanner::port_status representing the status of the port.
+   * The map is of type std::map<int, port_status>, where the key is an integer representing the port number,
+   * and the value is an enum port_status representing the status of the port.
    *
    * @return A constant reference to the port information map.
    */
-  std::map<std::pair<boost::asio::ip::address_v4, int>, Scanner::port_status> const& TCPScanner::port_info() const {
+  std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> const& TCPScanner::port_info() const {
     return port_info_;
   }
 
@@ -297,13 +298,29 @@ namespace network {
    * @brief Detects the version using the version detector.
    * If the version detector is not set, an error is handled.
    */
-  void TCPScanner::DetectVersion() {
-    if (version_detector_ == nullptr) {
+  void TCPScanner::DetectVersion(boost::asio::ip::address_v4 host) {
+    if (version_detectors_.at(host) == nullptr || version_detectors_.empty()) {
+      error_handler_.SetType(error_handler::ErrorHandler::error_type::ERROR);
       error_handler_.HandleError("Version detector not set");
       return;
     }
-    version_detector_->DetectVersion();
-    server_info_ = version_detector_->GetServerInfo();
+
+    if (port_info_.empty()) {
+      error_handler_.SetType(error_handler::ErrorHandler::error_type::ERROR);
+      error_handler_.HandleError("Port info is empty");
+      return;
+    }
+
+    if (port_info_.at(std::make_pair(host, hosts_ports_.at(host))) != port_status::OPEN) {
+      return;
+    }
+
+    version_detectors_.at(host)->DetectVersion();
+    servers_info_.push_back(version_detectors_.at(host)->GetServerInfo());
+  }
+
+  std::vector<parasyte::network::services::ServerInfo> TCPScanner::GetAllServerInfo() {
+    return servers_info_;
   }
 
 }
