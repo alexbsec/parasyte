@@ -1,4 +1,5 @@
 #include <iostream>
+#include "exploits/ExploitBase.hpp"
 #include "network/NetScanner.hpp"
 #include "network/NetUtils.hpp"
 #include "network/Services.hpp"
@@ -15,26 +16,35 @@ int main() {
   std::cout << "Scan started...\n";
   net_scanner.scanner->StartScan(port_to_scan);
   io_context.run();
-  std::map<std::pair<boost::asio::ip::address_v4, int>, parasyte::network::Scanner::port_status> port_info =
+  std::map<std::pair<boost::asio::ip::address_v4, int>, parasyte::network::port_status> port_info =
     net_scanner.scanner->port_info();
 
   for (const auto& entry : port_info) {
     const auto& key = entry.first;      // This is the pair of IP address and port
     const auto& status = entry.second;  // This is the port status
+    net_scanner.scanner->DetectVersion(key.first);
 
     std::cout << "IP: " << key.first.to_string() << ", Port: " << key.second << " - Status: ";
     switch (status) {
-      case parasyte::network::Scanner::port_status::OPEN:
+      case parasyte::network::port_status::OPEN:
         std::cout << "OPEN";
         break;
-      case parasyte::network::Scanner::port_status::CLOSED:
+      case parasyte::network::port_status::CLOSED:
         std::cout << "CLOSED";
         break;
-      case parasyte::network::Scanner::port_status::FILTERED:
+      case parasyte::network::port_status::FILTERED:
         std::cout << "FILTERED";
         break;
     }
     std::cout << std::endl;
+  }
+
+  std::vector<parasyte::network::services::ServerInfo> servers_info = net_scanner.scanner->GetAllServerInfo();
+  for (const auto& server_info : servers_info) {
+    parasyte::exploits::ExploitBase ebase = parasyte::exploits::ExploitBase(io_context, server_info, false);
+    ebase.exploiter->Exploit();
+    std::cout << "Server: " << server_info.server << ", Version: " << server_info.version << ", Host: " << server_info.host
+              << ", Port: " << server_info.port << std::endl;
   }
 
   return 0;
@@ -44,7 +54,7 @@ int main() {
   // std::cout << "PORT\tSTATUS\n";
 
   // for (auto pair : net_scanner.scanner->port_info()) {
-  //   using pstate = parasyte::network::Scanner::port_status;
+  //   using pstate = parasyte::network::port_status;
   //   static std::map<pstate, std::string> const pstr = {
   //     {pstate::OPEN, "open"},
   //     {pstate::CLOSED, "closed"},
