@@ -41,12 +41,14 @@ namespace network {
     using tcp_socket = tcp::socket;
     using tcp_resolver = tcp::resolver;
     using tcp_resolver_results = tcp::resolver::results_type;
+    // using port_status = parasyte::network::port_status;
 
     struct ServerInfo {
         std::string server;
         std::string version;
         std::string host;
         uint16_t port;
+        // port_status status;
     };
 
     class IServiceDetector {
@@ -149,6 +151,9 @@ namespace network {
         void GrabBanner() override;
         void DetectVersion() override;
         ServerInfo GetServerInfo() const override;
+        void SetPort(uint16_t port) {
+          port_ = port;
+        }
 
       private:
         ServerInfo server_info_;
