@@ -161,8 +161,13 @@ namespace network {
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
     boost::asio::ip::address_v4 local_ipv4 = utils::GetLocalIPv4Address();
     pinger = std::make_unique<Pinger>(io_context, local_ipv4, 24);
-    std::cout << "Pinger created. Starting to ping...\n";
-    Ping();
+    if (params.send_ping) {
+      std::cout << "Pinger created. Starting to ping...\n";
+      Ping();
+    } else {
+      // assumes host param is up
+      up_hosts_.push_back(boost::asio::ip::address_v4::from_string(params.host));
+    }
     switch (params.scanner_type) {
       case ScannerType::RAW:
         // scanner = std::make_unique<RawScanner>(io_context, local_ipv4.to_string(), params.protocol, params.timeout);
@@ -263,7 +268,7 @@ namespace network {
           } else {
             port_info_[std::make_pair(host_, port_number)] = port_status::CLOSED;
           }
-          hosts_ports_.at(host_) = port_number;
+          hosts_ports_.emplace(host_, port_number);
         }
       );
     }
@@ -320,6 +325,10 @@ namespace network {
   }
 
   std::vector<parasyte::network::services::ServerInfo> TCPScanner::GetAllServerInfo() {
+    std::cout << "Getting all server info...\n";
+    for (auto info : servers_info_) {
+      std::cout << "server: " << info.server << std::endl;
+    }
     return servers_info_;
   }
 

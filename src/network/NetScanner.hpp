@@ -66,6 +66,7 @@ namespace network {
       parasyte::network::utils::RawProtocol::basic_raw_socket::protocol_type protocol;
       int timeout;
       ScannerType scanner_type;
+      bool send_ping;
   };
 
   class Pinger {
@@ -75,6 +76,9 @@ namespace network {
 
       void Ping();
       void StartSend();
+      void SetUpHosts(std::vector<boost::asio::ip::address_v4> const& hosts) {
+        up_hosts_ = hosts;
+      }
       std::vector<boost::asio::ip::address_v4> const& GetUpHosts() const;
 
     private:
@@ -139,6 +143,12 @@ namespace network {
       void SwapScannerType(ScannerParams const& params);
       void StartScan(uint16_t port_number);
       void Ping();
+      void SetUpHosts(std::vector<boost::asio::ip::address_v4> const& hosts) {
+        if (pinger != nullptr) {
+          pinger->SetUpHosts(hosts);
+        }
+        up_hosts_ = hosts;
+      }
       std::unique_ptr<Scanner> scanner;
       std::unique_ptr<Pinger> pinger;
       std::vector<boost::asio::ip::address_v4> const& GetUpHosts() const;
