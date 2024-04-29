@@ -8,17 +8,18 @@ int main() {
   // try {
   boost::asio::io_context io_context;
   std::string host = "192.168.0.157";
+  boost::asio::ip::address_v4 ip = boost::asio::ip::make_address_v4(host);
   parasyte::network::utils::RawProtocol protocol = parasyte::network::utils::RawProtocol::v4();
   int timeout = 10000;
-  parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::TCP};
+  parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::TCP, false};
   parasyte::network::NetScanner net_scanner(io_context, params);
+  net_scanner.SetUpHosts({ip});
   uint16_t port_to_scan = 21;
   std::cout << "Scan started...\n";
   net_scanner.scanner->StartScan(port_to_scan);
   io_context.run();
   std::map<std::pair<boost::asio::ip::address_v4, int>, parasyte::network::port_status> port_info =
     net_scanner.scanner->port_info();
-
   for (const auto& entry : port_info) {
     const auto& key = entry.first;      // This is the pair of IP address and port
     const auto& status = entry.second;  // This is the port status
@@ -41,6 +42,9 @@ int main() {
 
   std::vector<parasyte::network::services::ServerInfo> servers_info = net_scanner.scanner->GetAllServerInfo();
   for (const auto& server_info : servers_info) {
+    if (server_info.server.empty()) {
+      continue;
+    }
     parasyte::exploits::ExploitBase ebase = parasyte::exploits::ExploitBase(io_context, server_info, false);
     ebase.exploiter->Exploit();
     std::cout << "Server: " << server_info.server << ", Version: " << server_info.version << ", Host: " << server_info.host
