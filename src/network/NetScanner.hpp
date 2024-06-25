@@ -138,6 +138,8 @@ namespace network {
   class NetScanner {
     public:
       NetScanner(boost::asio::io_context& io_context, ScannerParams const& params);
+      NetScanner(const NetScanner&) = delete;
+      NetScanner& operator=(const NetScanner&) = delete;
       ~NetScanner();
 
       void SwapScannerType(ScannerParams const& params);
@@ -149,13 +151,16 @@ namespace network {
         }
         up_hosts_ = hosts;
       }
+      void RunIoContext() {
+        io_context_.run();
+      }
       std::unique_ptr<Scanner> scanner;
       std::unique_ptr<Pinger> pinger;
       std::vector<boost::asio::ip::address_v4> const& GetUpHosts() const;
 
     private:
       boost::asio::io_context& io_context_;
-      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("parasyte.log", 0);
       parasyte::error_handler::ErrorHandler error_handler_;
       std::vector<boost::asio::ip::address_v4> up_hosts_;
   };
@@ -181,7 +186,7 @@ namespace network {
       boost::asio::io_context& io_context_;
       std::vector<boost::asio::ip::address_v4> hosts_ = {};
       parasyte::error_handler::ErrorHandler error_handler_;
-      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("scanner.log", 0);
+      parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("parasyte.log", 0);
       std::map<boost::asio::ip::address_v4, parasyte::network::services::ServiceDetector> service_detectors_;
       std::map<boost::asio::ip::address_v4, std::unique_ptr<parasyte::network::services::IVersionDetector>> version_detectors_;
   };
