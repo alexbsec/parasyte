@@ -29,18 +29,20 @@
 
 namespace parasyte {
 namespace controller {
+  using ServerInfo = parasyte::network::services::ServerInfo;
+  using IExploiter = parasyte::exploits::IExploiter;
+  using ExploitBase = parasyte::exploits::ExploitBase;
+  using NetScanner = parasyte::network::NetScanner;
+  using Logger = parasyte::utils::logging::Logger;
+  using ScannerParams = parasyte::network::ScannerParams;
+  using ErrorHandler = parasyte::error_handler::ErrorHandler;
+  
   class Parasyte {
-      using ServerInfo = parasyte::network::services::ServerInfo;
-      using IExploiter = parasyte::exploits::IExploiter;
-      using ExploitBase = parasyte::exploits::ExploitBase;
-      using NetScanner = parasyte::network::NetScanner;
-      using Logger = parasyte::utils::logging::Logger;
-      using ScannerParams = parasyte::network::ScannerParams;
-      using ErrorHandler = parasyte::error_handler::ErrorHandler;
 
     public:
       Parasyte(boost::asio::io_context& io_context, const ScannerParams& params, std::vector<uint16_t> ports);
       ~Parasyte();
+      void Init();
 
     private:
       boost::asio::io_context& io_context_;
@@ -52,6 +54,7 @@ namespace controller {
 
       // Methods
   };
+
 }
 }
 
