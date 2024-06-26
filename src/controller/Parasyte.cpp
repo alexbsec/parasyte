@@ -46,8 +46,37 @@ namespace controller {
     output_ = parasyte::utils::general::OutputWidget(0, "Scan complete.");
     }
 
-  // Parasyte::Parasyte(boost::asio::io_context& io_context, const ScannerParams& params, std::vector<uint16_t> ports) : 
-  // io_context_(io_context), net_scanner_(io_context, params), ports_(ports) {}
+  cli::CLI::CLI(parasyte::network::NetScanner& net_scanner, const parasyte::network::ScannerParams& params, std::vector<uint16_t> ports) :
+  net_scanner_(net_scanner), params_(params), ports_(ports) {
+      commands_["scan"] = std::make_shared<cli::ScanCommand>(net_scanner_, params_, ports_);
+  }
+
+  cli::CLI::~CLI() {}
+
+  void cli::CLI::Run(const std::string& cmd) {
+    if (commands_.find(cmd) != commands_.end()) {
+      commands_[cmd]->Execute();
+    } else {
+      parasyte::utils::general::OutputWidget(0, "Command not found.");
+    }
+  }
+
+  Parasyte::Parasyte(boost::asio::io_context& io_context, const ScannerParams& params, std::vector<uint16_t> ports) : 
+  io_context_(io_context), params_(params), net_scanner_(io_context, params), ports_(ports), error_handler_(error_handler::ErrorHandler::error_type::ERROR)  {}
+
+  void Parasyte::Init() {
+    cli::CLI cli(net_scanner_, params_, ports_);
+
+    std::string input;
+    while (true) {
+      std::cout << "Enter command: ";
+      std::cin >> input;
+      if (input == "exit") {
+        break;
+      }
+      cli.Run(input);
+    }
+  }
 
   Parasyte::~Parasyte() {}
 

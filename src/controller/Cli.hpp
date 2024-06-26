@@ -116,7 +116,7 @@ namespace controller {
 
     class CLI {
       public:
-        CLI();
+        CLI(parasyte::network::NetScanner& net_scanner, const parasyte::network::ScannerParams& params, std::vector<uint16_t> ports);
         ~CLI();
         void Run(const std::string& cmd);
 
@@ -124,6 +124,9 @@ namespace controller {
         CommandMap commands_;
         CommandMap dependent_commands_;
         bool is_scan_complete_;
+        parasyte::network::NetScanner& net_scanner_;
+        parasyte::network::ScannerParams params_;
+        std::vector<uint16_t> ports_;
     };
 
   }

@@ -51,6 +51,7 @@ namespace controller {
       Logger logger_ = Logger("parasyte.log");
       ErrorHandler error_handler_;
       std::map<std::pair<boost::asio::ip::address_v4, int>, bool> is_host_port_infected_;
+      parasyte::network::ScannerParams params_;
 
       // Methods
   };
