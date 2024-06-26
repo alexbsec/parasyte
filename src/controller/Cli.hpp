@@ -68,10 +68,13 @@ namespace controller {
 
     class MemoryCommand : public Command {
       public:
-        void Execute();
+        MemoryCommand(parasyte::network::NetScanner& net_scanner);
+        void Execute() override;
 
       private:
         std::string output_;
+        std::vector<std::string> cache_lines_;
+        parasyte::network::NetScanner& net_scanner_;
     };
 
     class ListExploitsCommand : public Command {

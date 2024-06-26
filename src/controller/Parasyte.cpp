@@ -44,11 +44,69 @@ namespace controller {
     }
 
     output_ = parasyte::utils::general::OutputWidget(0, "Scan complete.");
+  }
+
+  void cli::TargetCommand::Execute() {}
+
+  cli::MemoryCommand::MemoryCommand(parasyte::network::NetScanner& net_scanner) : net_scanner_(net_scanner) {}
+
+  void cli::MemoryCommand::Execute() {
+    std::map<std::pair<boost::asio::ip::address_v4, int>, parasyte::network::port_status> port_info_map = net_scanner_.scanner->port_info();
+    std::vector<parasyte::network::services::ServerInfo> server_info = net_scanner_.scanner->GetAllServerInfo();
+    bool is_scan_complete = net_scanner_.scanner->IsScanComplete();
+    if (!is_scan_complete) {
+      output_ = parasyte::utils::general::OutputWidget(1, "Scan yet to be completed.");
+      return;
     }
+
+    if (port_info_map.empty()) {
+      output_ = parasyte::utils::general::OutputWidget(2, "Something went wrong as the scan completed with no output.");
+      return;
+    }
+
+    cache_lines_.push_back("\n======== PORT SCAN INFO ========\n");
+
+    for (const auto& entry : port_info_map) {
+      const auto& key = entry.first;
+      const auto& status = entry.second;
+      std::string status_str;
+      switch (status) {
+        case parasyte::network::port_status::OPEN:
+          status_str = "OPEN";
+          break;
+        case parasyte::network::port_status::CLOSED:
+          status_str = "CLOSED";
+          break;
+        case parasyte::network::port_status::FILTERED:
+          status_str = "FILTERED";
+          break;
+        default:
+          status_str = "UNKNOWN";
+          break;
+      }
+      cache_lines_.push_back("Host: " + key.first.to_string() + " Port: " + std::to_string(key.second) + " Status: " + status_str + "\n");
+    }
+
+    cache_lines_.push_back("======== SERVERS INFO ========\n");
+
+
+    if (server_info.empty()) {
+      cache_lines_.push_back("No servers found.\n");
+    } else {
+      for (const auto& server : server_info) {
+        cache_lines_.push_back("Server: " + server.server + " Version: " + server.version + " Host: " + server.host + " Port: " + std::to_string(server.port) + "\n");
+      }
+    }
+
+    for (const auto& line : cache_lines_) {
+      output_ = parasyte::utils::general::OutputWidget(4, line);
+    }
+  }
 
   cli::CLI::CLI(parasyte::network::NetScanner& net_scanner, const parasyte::network::ScannerParams& params, std::vector<uint16_t> ports) :
   net_scanner_(net_scanner), params_(params), ports_(ports) {
       commands_["scan"] = std::make_shared<cli::ScanCommand>(net_scanner_, params_, ports_);
+      commands_["memory"] = std::make_shared<cli::MemoryCommand>(net_scanner_);
   }
 
   cli::CLI::~CLI() {}
@@ -69,7 +127,7 @@ namespace controller {
 
     std::string input;
     while (true) {
-      std::cout << "Enter command: ";
+      std::cout << "parasyte >> ";
       std::cin >> input;
       if (input == "exit") {
         break;
