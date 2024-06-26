@@ -129,6 +129,7 @@ namespace network {
       ) const = 0;
       virtual void DetectVersion(boost::asio::ip::address_v4 host) = 0;
       virtual std::vector<parasyte::network::services::ServerInfo> GetAllServerInfo() = 0;
+      virtual bool IsScanComplete() const = 0;
 
     protected:
       std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
@@ -177,9 +178,14 @@ namespace network {
       ) const override;
       void DetectVersion(boost::asio::ip::address_v4 host) override;
       std::vector<parasyte::network::services::ServerInfo> GetAllServerInfo() override;
+      bool IsScanComplete() const {
+        return is_scan_complete_;
+      }
+      
 
     private:
       int timeout_milliseconds_;
+      bool is_scan_complete_ = false;
       std::vector<parasyte::network::services::ServerInfo> servers_info_ = {{"", "", "", 0}};
       std::map<boost::asio::ip::address_v4, int> hosts_ports_;
       std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;

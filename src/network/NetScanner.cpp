@@ -272,6 +272,7 @@ namespace network {
         }
       );
     }
+    is_scan_complete_ = true;
   }
 
   /**
@@ -325,10 +326,9 @@ namespace network {
   }
 
   std::vector<parasyte::network::services::ServerInfo> TCPScanner::GetAllServerInfo() {
-    std::cout << "Getting all server info...\n";
-    for (auto info : servers_info_) {
-      std::cout << "server: " << info.server << std::endl;
-    }
+    // for (auto info : servers_info_) {
+    //   std::cout << "server: " << info.server << std::endl;
+    // }
     return servers_info_;
   }
 
