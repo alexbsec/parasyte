@@ -23,6 +23,7 @@ set(SOURCE_FILES
     src/network/Services.cpp
     src/payload/PayloadBase.cpp
     src/utils/Logger.cpp
+    src/utils/Utils.cpp
 )
 
 # Add executable based on source files
