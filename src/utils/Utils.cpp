@@ -41,7 +41,7 @@ namespace utils {
           output = "[*] " + message;
           break;
         default:
-          output = "[?] " + message;
+          output = message;
           break;
       }
       std::cout << output << std::endl;
