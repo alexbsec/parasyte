@@ -87,7 +87,6 @@ namespace network {
      * @return True if the parsing is successful, false otherwise.
      */
     bool vsFTPBannerParseStrategy::Parse(const std::string& banner, std::string& server, std::string& version) {
-      std::cout << banner << std::endl;
       std::regex version_regex("vsFTPd ([0-9]+\\.[0-9]+\\.[0-9]+)");
       std::smatch match;
       if (std::regex_search(banner, match, version_regex)) {
@@ -250,7 +249,6 @@ namespace network {
 
         std::istream response_stream(&response);
         std::getline(response_stream, banner_);
-        // std::cout << "Banner received: " << banner_ << std::endl;
       }
       catch (const std::exception& e) {
         error_handler_.HandleError(e.what());

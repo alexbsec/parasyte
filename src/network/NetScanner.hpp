@@ -130,6 +130,8 @@ namespace network {
       virtual void DetectVersion(boost::asio::ip::address_v4 host) = 0;
       virtual std::vector<parasyte::network::services::ServerInfo> GetAllServerInfo() = 0;
       virtual bool IsScanComplete() const = 0;
+      virtual void SetUpHosts(std::vector<boost::asio::ip::address_v4> const& hosts) = 0;
+      virtual void EmplaceServiceDetector() = 0;
 
     protected:
       std::map<std::pair<boost::asio::ip::address_v4, int>, port_status> port_info_;
@@ -151,6 +153,8 @@ namespace network {
           pinger->SetUpHosts(hosts);
         }
         up_hosts_ = hosts;
+        scanner->SetUpHosts(hosts);
+        scanner->EmplaceServiceDetector();
       }
       void RunIoContext() {
         io_context_.run();
@@ -181,7 +185,14 @@ namespace network {
       bool IsScanComplete() const {
         return is_scan_complete_;
       }
-      
+      void SetUpHosts(std::vector<boost::asio::ip::address_v4> const& hosts) {
+        hosts_ = hosts;
+      }
+      void EmplaceServiceDetector() {
+        for (auto& host : hosts_) {
+          service_detectors_.try_emplace(host, io_context_, host.to_string(), static_cast<uint16_t>(0));
+        }
+      }
 
     private:
       int timeout_milliseconds_;

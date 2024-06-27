@@ -104,6 +104,8 @@ namespace network {
     if (up_hosts_.empty()) {
       logger_.Log(parasyte::utils::logging::LogLevel::INFO, "No hosts are up.");
     }
+
+    logger_.Log(parasyte::utils::logging::LogLevel::INFO, "----- END PINGER -----");
   }
 
   /**
@@ -162,8 +164,8 @@ namespace network {
     boost::asio::ip::address_v4 local_ipv4 = utils::GetLocalIPv4Address();
     pinger = std::make_unique<Pinger>(io_context, local_ipv4, 24);
     if (params.send_ping) {
-      std::cout << "Pinger created. Starting to ping...\n";
-      Ping();
+      logger_.Log(parasyte::utils::logging::LogLevel::INFO, "Sending ping requests to hosts.");
+      // Ping();
     } else {
       // assumes host param is up
       up_hosts_.push_back(boost::asio::ip::address_v4::from_string(params.host));
@@ -207,6 +209,10 @@ namespace network {
         scanner = std::make_unique<TCPScanner>(io_context_, up_hosts_, params.timeout);
         break;
     }
+  }
+
+  void NetScanner::StartScan(uint16_t port) {
+    scanner->StartScan(port);
   }
 
   /**
@@ -254,7 +260,12 @@ namespace network {
    * @param port_number The port number to scan.
    */
   void TCPScanner::StartScan(uint16_t port_number) {
+    logger_.Log(parasyte::utils::logging::LogLevel::INFO, "----- START TCP SCANNER -----");
     for (auto host_ : hosts_) {
+      logger_.Log(
+        parasyte::utils::logging::LogLevel::INFO,
+        "Scanning port " + std::to_string(port_number) + " on " + host_.to_string() + "..."
+      );
       version_detectors_.try_emplace(host_, SetVersionDetector(io_context_, host_.to_string(), port_number));
       service_detectors_.at(host_).SetPort(port_number);
       auto socket = std::make_shared<boost::asio::ip::tcp::socket>(io_context_);
@@ -273,6 +284,7 @@ namespace network {
       );
     }
     is_scan_complete_ = true;
+    logger_.Log(parasyte::utils::logging::LogLevel::INFO, "----- END TCP SCANNER -----");
   }
 
   /**
