@@ -21,17 +21,17 @@
 // Include declarations
 
 #include <iostream>
-#include <string>
-#include <vector>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 #include "../error_handler/ErrorHandler.hpp"
-#include "../utils/Logger.hpp"
-#include "../utils/Utils.hpp"
 #include "../exploits/ExploitBase.hpp"
 #include "../network/NetScanner.hpp"
 #include "../network/NetUtils.hpp"
 #include "../network/Services.hpp"
+#include "../utils/Logger.hpp"
+#include "../utils/Utils.hpp"
 
 namespace parasyte {
 namespace controller {
@@ -40,13 +40,19 @@ namespace controller {
       public:
         virtual ~Command() = default;
         virtual void Execute() = 0;
-        virtual bool IsDependent() const { return false; }
+        virtual bool IsDependent() const {
+          return false;
+        }
     };
 
     class ScanCommand : public Command {
       public:
-        ScanCommand(parasyte::network::NetScanner& net_scanner, const parasyte::network::ScannerParams& params, std::vector<uint16_t> ports);
-        void Execute() override; 
+        ScanCommand(
+          parasyte::network::NetScanner& net_scanner,
+          const parasyte::network::ScannerParams& params,
+          std::vector<uint16_t> ports
+        );
+        void Execute() override;
 
       private:
         parasyte::network::NetScanner& net_scanner_;
@@ -72,6 +78,8 @@ namespace controller {
         void Execute() override;
 
       private:
+        void SaveToCache(const std::string& line);
+        std::string OpenCache();
         std::string output_;
         std::vector<std::string> cache_lines_;
         parasyte::network::NetScanner& net_scanner_;
@@ -80,7 +88,9 @@ namespace controller {
     class ListExploitsCommand : public Command {
       public:
         void Execute();
-        bool IsDependent() const override { return true; }
+        bool IsDependent() const override {
+          return true;
+        }
 
       private:
         std::string output_;
@@ -89,7 +99,9 @@ namespace controller {
     class SetCredentialsCommand : public Command {
       public:
         void Execute();
-        bool IsDependent() const override { return true; }
+        bool IsDependent() const override {
+          return true;
+        }
 
       private:
         std::string output_;
@@ -98,12 +110,14 @@ namespace controller {
     class RunExploitCommand : public Command {
       public:
         void Execute();
-        bool IsDependent() const override { return true; }
+        bool IsDependent() const override {
+          return true;
+        }
 
       private:
         std::string output_;
     };
-    
+
     class ExitCommand : public Command {
       public:
         void Execute();
@@ -119,7 +133,11 @@ namespace controller {
 
     class CLI {
       public:
-        CLI(parasyte::network::NetScanner& net_scanner, const parasyte::network::ScannerParams& params, std::vector<uint16_t> ports);
+        CLI(
+          parasyte::network::NetScanner& net_scanner,
+          const parasyte::network::ScannerParams& params,
+          std::vector<uint16_t> ports
+        );
         ~CLI();
         void Run(const std::string& cmd);
 
@@ -136,4 +154,4 @@ namespace controller {
 }
 }
 
-#endif // PARASYTE_CONTROLLER_CLI_HPP_
+#endif  // PARASYTE_CONTROLLER_CLI_HPP_

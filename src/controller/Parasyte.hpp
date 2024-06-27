@@ -36,13 +36,14 @@ namespace controller {
   using Logger = parasyte::utils::logging::Logger;
   using ScannerParams = parasyte::network::ScannerParams;
   using ErrorHandler = parasyte::error_handler::ErrorHandler;
-  
-  class Parasyte {
 
+  class Parasyte {
     public:
       Parasyte(boost::asio::io_context& io_context, const ScannerParams& params, std::vector<uint16_t> ports);
       ~Parasyte();
+      void Hail();
       void Init();
+
 
     private:
       boost::asio::io_context& io_context_;
