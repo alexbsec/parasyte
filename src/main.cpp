@@ -9,7 +9,7 @@ int main () {
   boost::asio::ip::address_v4 ip = boost::asio::ip::make_address_v4(host);
   parasyte::network::utils::RawProtocol protocol = parasyte::network::utils::RawProtocol::v4();
   int timeout = 10000;
-  parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::TCP, false};
+  parasyte::network::ScannerParams params = {host, protocol, timeout, parasyte::network::ScannerType::TCP, true};
   std::vector<uint16_t> ports = {21};
   parasyte::controller::Parasyte parasyte(io_context, params, ports);
   parasyte.Init();
