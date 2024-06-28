@@ -1,0 +1,93 @@
+[2024-06-27 17:20:01] [INFO] : Sending ping requests to hosts.
+[2024-06-27 17:20:03] [INFO] : ----- START PINGER -----
+[2024-06-27 17:20:03] [INFO] : 192.168.0.1 is up.
+[2024-06-27 17:25:28] [INFO] : 192.168.0.109 is up.
+[2024-06-27 17:27:51] [INFO] : 192.168.0.157 is up.
+[2024-06-27 17:28:48] [INFO] : 192.168.0.174 is up.
+[2024-06-27 17:29:40] [INFO] : 192.168.0.192 is up.
+[2024-06-27 17:31:03] [INFO] : 192.168.0.211 is up.
+[2024-06-27 17:33:13] [INFO] : ----- END PINGER -----
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.1...
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.109...
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.157...
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.174...
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.192...
+[2024-06-27 17:33:13] [INFO] : Scanning port 21 on 192.168.0.211...
+[2024-06-27 17:42:55] [INFO] : Sending ping requests to hosts.
+[2024-06-27 17:42:56] [INFO] : ----- START PINGER -----
+[2024-06-27 17:42:56] [INFO] : 192.168.0.1 is up.
+[2024-06-27 17:48:22] [INFO] : 192.168.0.109 is up.
+[2024-06-27 17:50:45] [INFO] : 192.168.0.157 is up.
+[2024-06-27 17:51:42] [INFO] : 192.168.0.174 is up.
+[2024-06-27 17:52:34] [INFO] : 192.168.0.192 is up.
+[2024-06-27 17:56:20] [INFO] : ----- END PINGER -----
+[2024-06-27 17:56:20] [INFO] : Scanning port 21 on 192.168.0.1...
+[2024-06-27 17:56:20] [INFO] : Scanning port 21 on 192.168.0.109...
+[2024-06-27 17:56:20] [INFO] : Scanning port 21 on 192.168.0.157...
+[2024-06-27 17:56:20] [INFO] : Scanning port 21 on 192.168.0.174...
+[2024-06-27 17:56:20] [INFO] : Scanning port 21 on 192.168.0.192...
+[2024-06-27 18:17:53] [INFO] : Sending ping requests to hosts.
+[2024-06-27 18:18:48] [INFO] : Sending ping requests to hosts.
+[2024-06-27 18:19:32] [INFO] : Sending ping requests to hosts.
+[2024-06-27 18:19:42] [INFO] : ----- START PINGER -----
+[2024-06-27 18:19:42] [INFO] : 192.168.0.1 is up.
+[2024-06-27 18:25:07] [INFO] : 192.168.0.109 is up.
+[2024-06-27 18:27:30] [INFO] : 192.168.0.157 is up.
+[2024-06-27 18:28:26] [INFO] : 192.168.0.174 is up.
+[2024-06-27 18:29:17] [INFO] : 192.168.0.192 is up.
+[2024-06-27 18:32:54] [INFO] : ----- END PINGER -----
+[2024-06-27 18:32:54] [INFO] : ----- START TCP SCANNER -----
+[2024-06-27 18:32:54] [INFO] : Scanning port 21 on 192.168.0.1...
+[2024-06-27 18:32:54] [INFO] : Scanning port 21 on 192.168.0.109...
+[2024-06-27 18:32:54] [INFO] : Scanning port 21 on 192.168.0.157...
+[2024-06-27 18:32:54] [INFO] : Scanning port 21 on 192.168.0.174...
+[2024-06-27 18:32:54] [INFO] : Scanning port 21 on 192.168.0.192...
+[2024-06-27 18:32:54] [INFO] : ----- END TCP SCANNER -----
+[2024-06-27 22:58:53] [INFO] : Sending ping requests to hosts.
+[2024-06-27 22:59:09] [INFO] : ----- START PINGER -----
+[2024-06-27 22:59:09] [INFO] : 192.168.0.1 is up.
+[2024-06-27 23:04:34] [INFO] : 192.168.0.109 is up.
+[2024-06-27 23:06:57] [INFO] : 192.168.0.157 is up.
+[2024-06-27 23:07:54] [INFO] : 192.168.0.174 is up.
+[2024-06-27 23:08:46] [INFO] : 192.168.0.192 is up.
+[2024-06-27 23:09:44] [INFO] : 192.168.0.207 is up.
+[2024-06-27 23:12:21] [INFO] : ----- END PINGER -----
+[2024-06-27 23:12:21] [INFO] : ----- START TCP SCANNER -----
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.1...
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.109...
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.157...
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.174...
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.192...
+[2024-06-27 23:12:21] [INFO] : Scanning port 21 on 192.168.0.207...
+[2024-06-27 23:12:21] [INFO] : ----- END TCP SCANNER -----
+[2024-06-28 08:16:09] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:16:44] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:17:57] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:18:01] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:18:52] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:19:11] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:19:53] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:19:56] [INFO] : ----- START PINGER -----
+[2024-06-28 08:19:56] [INFO] : 192.168.0.1 is up.
+[2024-06-28 08:20:45] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:21:40] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:22:09] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:22:32] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:22:57] [INFO] : Sending ping requests to hosts.
+[2024-06-28 08:22:59] [INFO] : ----- START PINGER -----
+[2024-06-28 08:22:59] [INFO] : 192.168.0.1 is up.
+[2024-06-28 08:30:50] [INFO] : 192.168.0.157 is up.
+[2024-06-28 08:31:46] [INFO] : 192.168.0.174 is up.
+[2024-06-28 08:32:38] [INFO] : 192.168.0.192 is up.
+[2024-06-28 08:32:57] [INFO] : 192.168.0.197 is up.
+[2024-06-28 08:36:04] [INFO] : ----- END PINGER -----
+[2024-06-28 08:36:04] [INFO] : ----- START TCP SCANNER -----
+[2024-06-28 08:36:04] [INFO] : Scanning port 21 on 192.168.0.1...
+[2024-06-28 08:36:04] [INFO] : Scanning port 21 on 192.168.0.157...
+[2024-06-28 08:36:04] [INFO] : Scanning port 21 on 192.168.0.174...
+[2024-06-28 08:36:04] [INFO] : Scanning port 21 on 192.168.0.192...
+[2024-06-28 08:36:04] [INFO] : Scanning port 21 on 192.168.0.197...
+[2024-06-28 08:36:04] [INFO] : ----- END TCP SCANNER -----
+[2024-06-28 11:43:16] [INFO] : Sending ping requests to hosts.
+[2024-06-28 11:43:21] [INFO] : ----- START PINGER -----
+[2024-06-28 11:43:21] [INFO] : 192.168.0.1 is up.

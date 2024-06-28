@@ -1,0 +1,3 @@
+/home/alexbsec/Projects/parasyte/parasyte/build/CMakeFiles/Parasyte.dir
+/home/alexbsec/Projects/parasyte/parasyte/build/CMakeFiles/edit_cache.dir
+/home/alexbsec/Projects/parasyte/parasyte/build/CMakeFiles/rebuild_cache.dir

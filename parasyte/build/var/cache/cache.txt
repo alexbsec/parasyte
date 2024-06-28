@@ -1,0 +1,21 @@
+
+======== PORT SCAN INFO ========
+
+Host: 192.168.0.1 Port: 21 Status: CLOSED
+
+Host: 192.168.0.157 Port: 21 Status: OPEN
+
+Host: 192.168.0.174 Port: 21 Status: CLOSED
+
+Host: 192.168.0.192 Port: 21 Status: CLOSED
+
+Host: 192.168.0.197 Port: 21 Status: CLOSED
+
+======== SERVERS INFO ========
+
+Host: 192.168.0.157:
+
+	Server:	vsftpd
+	Version:	3.0.5
+	Port:	21
+

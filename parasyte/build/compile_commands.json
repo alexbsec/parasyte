@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/main.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/main.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/main.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/controller/Parasyte.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/controller/Parasyte.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/controller/Parasyte.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/controller/Parasyte.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/exploits/ExploitBase.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/exploits/ExploitBase.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/exploits/ExploitBase.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/exploits/ExploitBase.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/network/NetScanner.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/network/NetScanner.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/network/NetScanner.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/network/NetScanner.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/network/NetUtils.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/network/NetUtils.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/network/NetUtils.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/network/NetUtils.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/network/Services.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/network/Services.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/network/Services.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/network/Services.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/payload/PayloadBase.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/payload/PayloadBase.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/payload/PayloadBase.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/payload/PayloadBase.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/utils/Logger.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/utils/Logger.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/utils/Logger.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/utils/Logger.cpp.o"
+},
+{
+  "directory": "/home/alexbsec/Projects/parasyte/parasyte/build",
+  "command": "/usr/bin/c++ -DBOOST_ATOMIC_DYN_LINK -DBOOST_ATOMIC_NO_LIB -DBOOST_FILESYSTEM_DYN_LINK -DBOOST_FILESYSTEM_NO_LIB -DBOOST_SYSTEM_DYN_LINK -DBOOST_SYSTEM_NO_LIB -I/home/alexbsec/Projects/parasyte/parasyte/src -Wall -Wextra -Wpedantic -Wconversion -Wall -Wextra -g -g -std=gnu++23 -o CMakeFiles/Parasyte.dir/src/utils/Utils.cpp.o -c /home/alexbsec/Projects/parasyte/parasyte/src/utils/Utils.cpp",
+  "file": "/home/alexbsec/Projects/parasyte/parasyte/src/utils/Utils.cpp",
+  "output": "CMakeFiles/Parasyte.dir/src/utils/Utils.cpp.o"
+}
+]
