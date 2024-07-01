@@ -103,7 +103,7 @@ namespace controller {
           unsigned int,
           std::pair<parasyte::network::services::ServerInfo, std::shared_ptr<parasyte::exploits::ExploitBase>>>
           servers_map_;
-          std::vector<std::string> out_lines_;
+        std::vector<std::string> out_lines_;
     };
 
     class SetCredentialsCommand : public Command {
@@ -155,6 +155,7 @@ namespace controller {
         CommandMap commands_;
         CommandMap dependent_commands_;
         bool is_scan_complete_;
+        bool is_exploit_command_created_ = false;
         parasyte::network::NetScanner& net_scanner_;
         parasyte::network::ScannerParams params_;
         std::vector<uint16_t> ports_;
@@ -165,6 +166,7 @@ namespace controller {
           servers_map_;
         std::shared_ptr<parasyte::exploits::ExploitBase> MakeExploit(const parasyte::network::services::ServerInfo& server_info
         );
+        parasyte::utils::logging::Logger logger_ = parasyte::utils::logging::Logger("parasyte.log", 0);
     };
 
   }
