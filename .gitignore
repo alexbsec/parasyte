@@ -1,4 +1,6 @@
 /build/
+/parasyte/build/
+/payload/build/
 /.direnv/
 /.envrc
 /.ycm_extra_conf.py
