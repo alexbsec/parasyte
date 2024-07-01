@@ -38,6 +38,7 @@ namespace utils {
       ERROR,
       WARNING,
       INFO,
+      DEBUG,
     };
 
     class Logger {
