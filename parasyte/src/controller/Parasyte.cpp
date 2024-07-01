@@ -33,6 +33,14 @@ namespace controller {
       , params_(params)
       , ports_(ports) {}
 
+  /**
+   * @brief Executes the scan command.
+   *
+   * This function performs a network scan based on the provided parameters. It checks if the scan is already complete,
+   * and if not, prompts the user to run the scan again. If the `send_ping` flag is set, it sends a ping to find up hosts
+   * and updates the list of up hosts. Then, it starts scanning the specified ports and detects the version of each open port.
+   * Finally, it sets the output widget to indicate that the scan is complete.
+   */
   void cli::ScanCommand::Execute() {
     if (net_scanner_.scanner->IsScanComplete()) {
       output_ = parasyte::utils::general::OutputWidget(1, "Scan already completed. Run again? [y/n]");
@@ -80,6 +88,13 @@ namespace controller {
 
   cli::MemoryCommand::MemoryCommand(parasyte::network::NetScanner& net_scanner) : net_scanner_(net_scanner) {}
 
+  /**
+   * @brief Executes the MemoryCommand.
+   * 
+   * This function is responsible for executing the MemoryCommand. It retrieves port information and server information
+   * from the network scanner and stores them in the cache. It also generates an output widget for each line of information
+   * and saves the information to the cache.
+   */
   void cli::MemoryCommand::Execute() {
     std::map<std::pair<boost::asio::ip::address_v4, int>, parasyte::network::port_status> port_info_map =
       net_scanner_.scanner->port_info();
@@ -152,6 +167,15 @@ namespace controller {
     cache_lines_.clear();
   }
 
+  /**
+   * @brief Saves the given line to the cache file.
+   *
+   * This function opens the cache file in the specified mode and writes the given line to it.
+   * If the cache file fails to open, an error message is set in the output widget.
+   *
+   * @param line The line to be saved to the cache file.
+   * @param mode The open mode for the cache file.
+   */
   void cli::MemoryCommand::SaveToCache(const std::string& line, std::ios::openmode mode) {
     std::ofstream cache_file("./var/cache/cache.txt", mode);
     if (!cache_file.is_open()) {
@@ -162,6 +186,11 @@ namespace controller {
     cache_file.close();
   }
 
+  /**
+   * @brief Opens the cache file and returns its contents as a string.
+   * 
+   * @return The contents of the cache file as a string.
+   */
   std::string cli::MemoryCommand::OpenCache() {
     std::ifstream cache_file("./var/cache/cache.txt");
     if (!cache_file.is_open()) {
@@ -184,6 +213,13 @@ namespace controller {
   )
       : servers_map_(servers_map) {}
 
+  /**
+   * @brief Executes the ListExploitsCommand.
+   *
+   * This function lists the available exploits by iterating over the servers_map_ and
+   * retrieving the server information and associated exploits. It populates the output_
+   * with the list of exploits and their details.
+   */
   void cli::ListExploitsCommand::Execute() {
     if (servers_map_.empty()) {
       output_ = parasyte::utils::general::OutputWidget(2, "No exploits found.");
@@ -212,6 +248,15 @@ namespace controller {
     out_lines_.clear();
   }
 
+  /**
+   * @brief Constructs a CLI object.
+   * 
+   * This constructor initializes a CLI object with the given parameters.
+   * 
+   * @param net_scanner A reference to the NetScanner object.
+   * @param params The ScannerParams object.
+   * @param ports A vector of uint16_t representing the ports.
+   */
   cli::CLI::CLI(
     parasyte::network::NetScanner& net_scanner,
     const parasyte::network::ScannerParams& params,
@@ -226,6 +271,16 @@ namespace controller {
 
   cli::CLI::~CLI() {}
 
+  /**
+   * @brief Executes the specified command.
+   *
+   * This function executes the specified command by calling the corresponding command's Execute() function.
+   * If the command is "memory" and the network scanner has completed the scan and the exploit command has not been created yet,
+   * it creates exploit bases for each server found by the scanner and adds them to the servers_map_.
+   * It also adds a "exploits" command to the commands_ map, which lists all the available exploits.
+   *
+   * @param cmd The command to be executed.
+   */
   void cli::CLI::Run(const std::string& cmd) {
     if (commands_.find(cmd) != commands_.end()) {
       commands_[cmd]->Execute();
@@ -273,6 +328,15 @@ namespace controller {
     }
   }
 
+  /**
+   * @brief Creates an exploit object based on the provided server information.
+   * 
+   * This function creates an exploit object using the provided server information and returns it as a shared pointer.
+   * The exploit object is created with the IO context from the net_scanner_ member variable and the provided server information.
+   * 
+   * @param server_info The server information used to create the exploit object.
+   * @return A shared pointer to the created exploit object.
+   */
   std::shared_ptr<parasyte::exploits::ExploitBase> cli::CLI::MakeExploit(
     const parasyte::network::services::ServerInfo& server_info
   ) {
@@ -280,6 +344,15 @@ namespace controller {
     return exploit;
   }
 
+  /**
+   * @brief Constructs Parasyte object.
+   * 
+   * This constructor initializes Parasyte object with the given parameters.
+   * 
+   * @param io_context The boost::asio::io_context object to be used for asynchronous operations.
+   * @param params The ScannerParams object containing the parameters for the network scanner.
+   * @param ports A vector of uint16_t values representing the ports to be scanned.
+   */
   Parasyte::Parasyte(boost::asio::io_context& io_context, const ScannerParams& params, std::vector<uint16_t> ports)
       : io_context_(io_context)
       , params_(params)
@@ -288,6 +361,8 @@ namespace controller {
       , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
         logger_.Log(parasyte::utils::logging::LogLevel::INFO, "========= Parasyte initialized. =========");
       }
+
+  Parasyte::~Parasyte() {}
 
   void Parasyte::Hail() {
     std::cout << "/* >>====================================================<< */" << std::endl;
@@ -304,6 +379,11 @@ namespace controller {
     std::cout << "/* >>====================================================<< */" << std::endl;
   }
 
+  /**
+   * @brief Initializes the Parasyte controller.
+   * This function sets up the necessary components and enters a loop to process user input.
+   * The loop continues until the user enters "exit".
+   */
   void Parasyte::Init() {
     Hail();
     cli::CLI cli(net_scanner_, params_, ports_);
@@ -321,6 +401,5 @@ namespace controller {
     }
   }
 
-  Parasyte::~Parasyte() {}
 }
 }
