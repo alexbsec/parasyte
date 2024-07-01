@@ -148,6 +148,8 @@ namespace controller {
       output_ = parasyte::utils::general::OutputWidget(4, line);
       SaveToCache(line, mode);
     }
+
+    cache_lines_.clear();
   }
 
   void cli::MemoryCommand::SaveToCache(const std::string& line, std::ios::openmode mode) {
@@ -184,7 +186,7 @@ namespace controller {
 
   void cli::ListExploitsCommand::Execute() {
     if (servers_map_.empty()) {
-      output_ = parasyte::utils::general::OutputWidget(2, "No servers found.");
+      output_ = parasyte::utils::general::OutputWidget(2, "No exploits found.");
       return;
     }
 
@@ -198,14 +200,16 @@ namespace controller {
         ", Server: " + server_info.server + ", Version: " + server_info.version + "\n"
       );
 
-      for (const auto& exploiters : exploit_base->exploiters) {
-        out_lines_.push_back("\tExploiter: " + exploiters->name + "\n");
+      for (const auto& exploiter : exploit_base->exploiters) {
+        out_lines_.push_back("\tExploits available: " + exploiter->GetName() + "\n");
       }
     }
 
     for (const auto& line : out_lines_) {
       output_ = parasyte::utils::general::OutputWidget(4, line);
     }
+
+    out_lines_.clear();
   }
 
   cli::CLI::CLI(
@@ -225,17 +229,43 @@ namespace controller {
   void cli::CLI::Run(const std::string& cmd) {
     if (commands_.find(cmd) != commands_.end()) {
       commands_[cmd]->Execute();
-      if (cmd == "memory" && net_scanner_.scanner->IsScanComplete()) {
+      if (cmd == "memory" && net_scanner_.scanner->IsScanComplete() && !is_exploit_command_created_) {
         std::vector<parasyte::network::services::ServerInfo> servers = net_scanner_.scanner->GetAllServerInfo();
         unsigned int id = 1;
+
+        if (servers.empty()) {
+          logger_.Log(parasyte::utils::logging::LogLevel::WARNING, "No servers found while creating exploits.");
+        }
+        
         for (const auto& server : servers) {
           std::shared_ptr<parasyte::exploits::ExploitBase> exploit_base = MakeExploit(server);
-          if (exploit_base->exploiters.empty()) continue;
+          if (server.host.empty()) {
+              logger_.Log(parasyte::utils::logging::LogLevel::INFO, "Skipping server due to empty host: " + server.server);
+              continue;
+          }
+          if (exploit_base->exploiters.empty()) {
+              logger_.Log(parasyte::utils::logging::LogLevel::INFO, "Skipping server due to empty exploiters: " + server.host);
+              continue;
+          }
+          logger_.Log(
+              parasyte::utils::logging::LogLevel::INFO,
+              "Creating exploit base for host: " + server.host + ", server: " + server.server
+          );
           std::pair<parasyte::network::services::ServerInfo, std::shared_ptr<parasyte::exploits::ExploitBase>>
             available_exploits = std::make_pair(server, exploit_base);
-          servers_map_.try_emplace(id, available_exploits);
+          auto result = servers_map_.try_emplace(id, available_exploits);
+          if (!result.second) {
+            logger_.Log(parasyte::utils::logging::LogLevel::ERROR, "Failed to emplace exploit base for id: " + std::to_string(id));
+          } else {
+            logger_.Log(parasyte::utils::logging::LogLevel::INFO, "Successfully emplaced exploit base for id: " + std::to_string(id));
+          }
           id++;
         }
+
+        if (servers_map_.empty()) {
+          logger_.Log(parasyte::utils::logging::LogLevel::WARNING, "Something went wrong while creating exploits as no servers were found.");
+        }
+
         commands_["exploits"] = std::make_shared<cli::ListExploitsCommand>(servers_map_);
       }
     } else {
@@ -246,7 +276,7 @@ namespace controller {
   std::shared_ptr<parasyte::exploits::ExploitBase> cli::CLI::MakeExploit(
     const parasyte::network::services::ServerInfo& server_info
   ) {
-    auto exploit = std::make_shared<parasyte::exploits::ExploitBase>(net_scanner_.GetIoContext(), server_info, true);
+    auto exploit = std::make_shared<parasyte::exploits::ExploitBase>(net_scanner_.GetIoContext(), server_info, false);
     return exploit;
   }
 
@@ -255,7 +285,9 @@ namespace controller {
       , params_(params)
       , net_scanner_(io_context, params)
       , ports_(ports)
-      , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {}
+      , error_handler_(error_handler::ErrorHandler::error_type::ERROR) {
+        logger_.Log(parasyte::utils::logging::LogLevel::INFO, "========= Parasyte initialized. =========");
+      }
 
   void Parasyte::Hail() {
     std::cout << "/* >>====================================================<< */" << std::endl;
